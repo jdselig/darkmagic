@@ -1,0 +1,28 @@
+# Unity-generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+
+# IDE
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Unity meta
+# Keep .meta files for packages (do NOT ignore *.meta)

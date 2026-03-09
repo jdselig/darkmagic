@@ -1,0 +1,28 @@
+{
+  "name": "com.archenemy.darkmagic",
+  "version": "3.6.0",
+  "displayName": "DarkMagic",
+  "description": "A tiny, DX-first Unity toolkit: V (events), S (state), VAsync (Awaitable sugar), W (optional runner), I (Input wrapper), X (utilities), A (animation awaitables), U (code-first UI).",
+  "unity": "6000.3",
+  "author": {
+    "name": "Archenemy Games"
+  },
+  "samples": [
+    {
+      "displayName": "Config",
+      "description": "VConfig, SConfig, WConfig, and IConfig in one folder (recommended starting point).",
+      "path": "Samples~/Config"
+    },
+    {
+      "displayName": "Input Starter",
+      "description": "A ready-to-import Input Actions asset + tiny wrapper + optional bridge to I.",
+      "path": "Samples~/InputStarter"
+    },
+    {
+      "displayName": "UI Starter",
+      "description": "UConfig + example scripts for banners, dialogue, choices, and HUD display.",
+      "path": "Samples~/UIStarter"
+    }
+  ],
+  "dependencies": {}
+}

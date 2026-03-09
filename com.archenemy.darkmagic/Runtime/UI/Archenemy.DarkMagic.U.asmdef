@@ -1,0 +1,22 @@
+{
+  "name": "Archenemy.DarkMagic.U",
+  "rootNamespace": "",
+  "references": [
+    "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.Input",
+    "Archenemy.DarkMagic.W",
+    "Archenemy.DarkMagic.V",
+    "Archenemy.DarkMagic.Animation",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

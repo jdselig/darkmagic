@@ -1,0 +1,25 @@
+{
+  "name": "Archenemy.DarkMagic.Editor",
+  "rootNamespace": "",
+  "references": [
+    "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.V",
+    "Archenemy.DarkMagic.W",
+    "Archenemy.DarkMagic.U",
+    "Archenemy.DarkMagic.Input",
+    "Archenemy.DarkMagic.StateMachine",
+    "Archenemy.DarkMagic.Animation",
+    "Archenemy.DarkMagic.X"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Archenemy.DarkMagic.StateMachine",
+  "rootNamespace": "",
+  "references": [
+    "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.V"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

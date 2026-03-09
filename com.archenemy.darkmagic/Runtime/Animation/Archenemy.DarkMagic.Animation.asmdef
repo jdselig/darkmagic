@@ -1,0 +1,17 @@
+{
+  "name": "Archenemy.DarkMagic.Animation",
+  "rootNamespace": "",
+  "references": [
+    "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.W"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
