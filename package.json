@@ -1,8 +1,8 @@
 {
   "name": "com.archenemy.darkmagic",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "displayName": "DarkMagic",
-  "description": "A tiny, DX-first Unity toolkit: V (events), S (state), VAsync (Awaitable sugar), W (optional runner), I (Input wrapper), X (utilities), A (animation awaitables), U (code-first UI).",
+  "description": "A tiny, DX-first Unity toolkit: V (events), S (state), W (Awaitable helpers), I (Input wrapper), X (utilities), A (animation awaitables), and U (code-first UI).",
   "unity": "6000.3",
   "author": {
     "name": "Archenemy Games"

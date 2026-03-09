@@ -1,4 +1,7 @@
-# V (Unity)
+# DarkMagic
+### Making Unity better, by any means necessary 😈
+
+---
 
 ## Quickstart (Unity Package Manager)
 
@@ -56,7 +59,7 @@ Use these three ideas to keep your brain tidy:
 
 1) **V**: *What happened?* (events)
 2) **S**: *What mode are we in?* (state)
-3) **W**: *Wait for time/frames/conditions* (async sugar)
+3) **W**: *Wait for time/frames/conditions* (async helpers)
 4) **I**: *Input, old-school style* (Input System wrapper)
 5) **X**: *Tiny utilities* (vectors/transforms)
 6) **A**: *Animation awaitables* (Animator helpers)
@@ -205,7 +208,7 @@ this.OnStateChanged<S.Player>(e => Debug.Log("Player state changed!"));
 
 ---
 
-# W (Awaitable sugar)
+# W (Awaitable helpers)
 
 Unity’s `Awaitable` is already great. **W** just makes it **faster to type** and **harder to mess up**.
 
@@ -302,15 +305,15 @@ void Update()
 
 `I` tries to read input in this order:
 
-1) **New Input System (preferred)**  
+1) **New Input System (preferred)**
    If the Input System package is present at runtime, `I` reads directly from devices like:
    - Keyboard
    - Mouse
    - Gamepad
-   - Touchscreen  
+   - Touchscreen
    It does this via a small **reflection bridge**, so projects without the Input System still compile.
 
-2) **Fallback: legacy `UnityEngine.Input`**  
+2) **Fallback: legacy `UnityEngine.Input`**
    If the Input System package is not present, `I` calls the legacy `Input.*` APIs.
 
 ### Warning behavior (soft-require)
@@ -353,7 +356,7 @@ if (c > 0)
 
 ## “Legacy-style” Buttons & Axes (zero-setup defaults)
 
-The old Input Manager had lots of named mappings (`"Jump"`, `"Horizontal"`, etc).  
+The old Input Manager had lots of named mappings (`"Jump"`, `"Horizontal"`, etc).
 The new Input System expects you to define actions in an asset.
 
 To keep prototyping painless, `I` includes **sane defaults** for:
@@ -508,8 +511,8 @@ Most common cause: you subscribed twice. Check your subscription locations.
 
 ## The Three Rules (for students)
 
-1) **Events are “what happened,” not “what to do.”**  
-2) **Subscribe once (Awake/Start/OnEnable), never in Update.**  
+1) **Events are “what happened,” not “what to do.”**
+2) **Subscribe once (Awake/Start/OnEnable), never in Update.**
 3) **In MonoBehaviours, use `this.On` / `this.Once` so listeners die cleanly.**
 
 
@@ -776,7 +779,7 @@ If you want the very student-friendly syntax:
 V.Broadcast<PlayerDamaged>(12);
 ```
 
-you must use the **single-generic Broadcast overload** (added in v2.6.1).  
+you must use the **single-generic Broadcast overload** (added in v2.6.1).
 It runtime-validates that `PlayerDamaged : V.Event<int>` and then publishes.
 
 (Older C# rules don’t allow “ ly specifying” generic type arguments, so the previous `Broadcast<TEvent, T>(T payload)` requires writing `Broadcast<PlayerDamaged, int>(12)`.)
@@ -1085,9 +1088,9 @@ Then you can write:
 ```csharp
 Log("Hello!");   // navy
 L("Same thing"); // alias
-Warn("Careful!"); 
+Warn("Careful!");
 Error("Nope.");
-LogOnce("Only once!"); 
+LogOnce("Only once!");
 Single("Also only once!");
 ```
 
