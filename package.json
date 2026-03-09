@@ -1,6 +1,6 @@
 {
   "name": "com.archenemy.darkmagic",
-  "version": "3.6.1",
+  "version": "3.6.3",
   "displayName": "DarkMagic",
   "description": "A tiny, DX-first Unity toolkit: V (events), S (state), W (Awaitable helpers), I (Input wrapper), X (utilities), A (animation awaitables), and U (code-first UI).",
   "unity": "6000.3",

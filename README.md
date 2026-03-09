@@ -12,15 +12,17 @@ In Unity: **Window → Package Manager → + → Add package from git URL...**
 Paste:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.6.2
+https://github.com/jdselig/darkmagic.git#v3.6.3
 ```
 
-2) **Import Samples (recommended)**
+2) **Import Samples**
 - In Package Manager, select **DarkMagic**
 - Expand **Samples**
 - Import **Config** (and **UI Starter** / **Input Starter** if you want the optional starters)
 
 Then copy the imported **Config** folder into your project’s `Assets/` folder (so it becomes `Assets/Config/...`).
+
+You can then delete the Samples folder if you wish.
 
 3) **TMP Essentials (UI module)**
 If you see a TMP prompt, click **Import TMP Essentials**.
@@ -29,27 +31,18 @@ If you don’t get a prompt, but UI text looks missing, go to:
 
 4) **Input System (I module)**
 `I` uses the **New Input System** under the hood.
+Unity 6.3 and later should set this up automatically.
 If your project doesn’t have it enabled, install/enable **Input System** and set:
 **Project Settings → Player → Active Input Handling → Input System Package (New)** (or **Both**).
 
 That’s it. You can now use:
 - `V` (events), `StateMachine` (states), `W` (awaitable helpers), `I` (inputs), `U` (UI), `X` (utilities).
 
-**V** is a tiny, DX-first toolkit for prototyping in Unity:
+**DarkMagic** is a tiny, DX-first toolkit for prototyping in Unity:
 - A strongly-typed event bus (**V**) where events are **types**
 - A simple, flexible state machine (**S**)
 
 Designed for students and rapid iteration: minimal ceremony, helpful guardrails.
-
----
-
-## Install (Unity Package Manager)
-
-Unity → Window → Package Manager → + → Add package from git URL...
-
-Use:
-- `https://github.com/<your-org-or-user>/<your-repo>.git?path=com.archenemy.darkmagic`
-- Or tag a release: `...git?path=com.archenemy.darkmagic#2.0.0`
 
 ---
 
@@ -74,16 +67,13 @@ Use these three ideas to keep your brain tidy:
 
 ## Quick Start
 
-Package Manager → **V** → **Samples** → Import **“VConfig”**
-
-This adds `VConfig.cs`, where students:
-- toggle `V.Trace` (Editor/Dev only)
-- define event types (one class per event)
+Make sure you added the Samples/Config files as mentioned above!
 
 ### Define events (in VConfig.cs)
 ```csharp
 public sealed class GameStart : V.Event { }
 public sealed class PlayerDamaged : V.Event<int> { }
+public sealed class MyCoolNewEvent : V.Event<string> { }
 ```
 
 ### Broadcast
