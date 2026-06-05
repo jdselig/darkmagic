@@ -10,8 +10,10 @@ namespace DarkMagic
 {
     public static partial class U
     {
-
-        internal static TextAlignmentOptions AlignmentForPlacement(Placements placement, TextAlignmentOptions fallback)
+        internal static TextAlignmentOptions AlignmentForPlacement(
+            Placements placement,
+            TextAlignmentOptions fallback
+        )
         {
             return placement switch
             {
@@ -23,16 +25,34 @@ namespace DarkMagic
                 Placements.MiddleCenter => TextAlignmentOptions.Center,
                 Placements.BottomCenter => TextAlignmentOptions.Center,
 
-                _ => fallback
+                _ => fallback,
             };
         }
 
+        private static Option[] ParseOptionsWithDescriptions(string[] options, string delimiter)
+        {
+            if (options == null)
+                return Array.Empty<Option>();
+            delimiter ??= ":::";
+            var opts = new Option[options.Length];
+            for (int i = 0; i < options.Length; i++)
+            {
+                var s = options[i] ?? "";
+                var parts = s.Split(new[] { delimiter }, 2, StringSplitOptions.None);
+                var label = parts.Length > 0 ? parts[0] : s;
+                var desc = parts.Length > 1 ? parts[1] : null;
+                opts[i] = new Option(label, desc);
+            }
+            return opts;
+        }
 
         private static Option[] ToOptions(string[] options)
         {
-            if (options == null) return Array.Empty<Option>();
+            if (options == null)
+                return Array.Empty<Option>();
             var opts = new Option[options.Length];
-            for (int i = 0; i < options.Length; i++) opts[i] = new Option(PreprocessMarkupInline(options[i]));
+            for (int i = 0; i < options.Length; i++)
+                opts[i] = new Option(PreprocessMarkupInline(options[i]));
             return opts;
         }
 
@@ -40,7 +60,18 @@ namespace DarkMagic
         // Public API (v1)
         // ============================================================
 
-        public static async Awaitable<Result<bool>> PopBanner(string text, Placements placement = Placements.TopCenter, Sizes size = Sizes.FullWidth, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null, CancellationToken cancellationToken = default)
+        public static async Awaitable<Result<bool>> PopBanner(
+            string text,
+            Placements placement = Placements.TopCenter,
+            Sizes size = Sizes.FullWidth,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            CancellationToken cancellationToken = default
+        )
         {
             EnsureSystem();
             UISystem.EnsureEventSystem();
@@ -49,13 +80,22 @@ namespace DarkMagic
 
             text = PreprocessMarkupInline(text);
             var panel = _pool.GetOrCreate(PopupKind.Banner);
-            panel.ConfigureBanner(text, placement, size, textSize, textColor, textAlign, panelColor);
+            panel.ConfigureBanner(
+                text,
+                placement,
+                size,
+                textSize,
+                textColor,
+                textAlign,
+                panelColor
+            );
             panel.SetBorder(borderSize, borderColor);
             await panel.FadeIn(cancellationToken);
 
             _stack.Push(panel);
 
-            if (UConfig.TRACE) Debug.Log($"[U] PopBanner: {text}");
+            if (UConfig.TRACE)
+                Debug.Log($"[U] PopBanner: {text}");
 
             V.Broadcast<DialoguePopped>(text);
 
@@ -68,8 +108,19 @@ namespace DarkMagic
             return new Result<bool>(!res.Cancelled, res.Cancelled);
         }
 
-
-        public static async Awaitable<Result<bool>> PopBanner(string text, float secondsToLive, Placements placement = Placements.TopCenter, Sizes size = Sizes.FullWidth, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null, System.Threading.CancellationToken cancellationToken = default)
+        public static async Awaitable<Result<bool>> PopBanner(
+            string text,
+            float secondsToLive,
+            Placements placement = Placements.TopCenter,
+            Sizes size = Sizes.FullWidth,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            System.Threading.CancellationToken cancellationToken = default
+        )
         {
             EnsureSystem();
             UISystem.EnsureEventSystem();
@@ -79,13 +130,22 @@ namespace DarkMagic
             text = PreprocessMarkupInline(text);
 
             var panel = _pool.GetOrCreate(PopupKind.Banner);
-            panel.ConfigureBanner(text, placement, size, textSize, textColor, textAlign, panelColor);
+            panel.ConfigureBanner(
+                text,
+                placement,
+                size,
+                textSize,
+                textColor,
+                textAlign,
+                panelColor
+            );
             panel.SetBorder(borderSize, borderColor);
             await panel.FadeIn(cancellationToken);
 
             _stack.Push(panel);
 
-            if (UConfig.TRACE) Debug.Log($"[U] PopBanner (timed {secondsToLive:0.##}s): {text}");
+            if (UConfig.TRACE)
+                Debug.Log($"[U] PopBanner (timed {secondsToLive:0.##}s): {text}");
 
             // Let students hook SFX, etc.
             V.Broadcast<DialoguePopped>(text);
@@ -98,7 +158,7 @@ namespace DarkMagic
             {
                 // fall through to cleanup, return canceled
                 _stack.Pop();
-            await panel.FadeOut(CancellationToken.None);
+                await panel.FadeOut(CancellationToken.None);
                 panel.ReturnToPool(PopupKind.Banner);
                 return Result<bool>.Canceled();
             }
@@ -112,34 +172,93 @@ namespace DarkMagic
         }
 
         // Preferred signature: keeps CancellationToken last so named args like textColor: work nicely.
-        public static async Awaitable<Result<bool>> PopDialogue(string text, Placements placement = Placements.BottomCenter, Sizes size = Sizes.FullWidth, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null, CancellationToken cancellationToken = default)
-            => await PopDialogue_Impl(text, cancellationToken, placement, size, textSize, textColor, textAlign, panelColor, borderSize, borderColor);
+        public static async Awaitable<Result<bool>> PopDialogue(
+            string text,
+            Placements placement = Placements.BottomCenter,
+            Sizes size = Sizes.FullWidth,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            CancellationToken cancellationToken = default
+        ) =>
+            await PopDialogue_Impl(
+                text,
+                cancellationToken,
+                placement,
+                size,
+                textSize,
+                textColor,
+                textAlign,
+                panelColor,
+                borderSize,
+                borderColor
+            );
 
         // Back-compat signature (older versions had CancellationToken first).
-        public static async Awaitable<Result<bool>> PopDialogue(string text, CancellationToken cancellationToken, Placements placement = Placements.BottomCenter, Sizes size = Sizes.FullWidth, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null)
-            => await PopDialogue_Impl(text, cancellationToken, placement, size, textSize, textColor, textAlign, panelColor, borderSize: null, borderColor: null);
+        public static async Awaitable<Result<bool>> PopDialogue(
+            string text,
+            CancellationToken cancellationToken,
+            Placements placement = Placements.BottomCenter,
+            Sizes size = Sizes.FullWidth,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null
+        ) =>
+            await PopDialogue_Impl(
+                text,
+                cancellationToken,
+                placement,
+                size,
+                textSize,
+                textColor,
+                textAlign,
+                panelColor,
+                borderSize: null,
+                borderColor: null
+            );
 
-        private static async Awaitable<Result<bool>> PopDialogue_Impl(string text, CancellationToken cancellationToken, Placements placement, Sizes size, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor, int? borderSize, Color? borderColor)
+        private static async Awaitable<Result<bool>> PopDialogue_Impl(
+            string text,
+            CancellationToken cancellationToken,
+            Placements placement,
+            Sizes size,
+            int? textSize,
+            Color? textColor,
+            TextAlignmentOptions? textAlign,
+            Color? panelColor,
+            int? borderSize,
+            Color? borderColor
+        )
         {
             EnsureSystem();
 
             var pages = PaginateDialogueWithMarkup(text, size, textSize);
-            if (pages == null || pages.Count == 0) pages = new List<string> { "" };
+            if (pages == null || pages.Count == 0)
+                pages = new List<string> { "" };
 
             var panel = _pool.GetOrCreate(PopupKind.Dialogue);
             _stack.Push(panel);
 
             bool didFade = false;
 
-
-
-
-
-
             for (int i = 0; i < pages.Count; i++)
             {
                 var pageText = pages[i];
-                panel.ConfigureDialogue(pageText, i + 1, pages.Count, placement, size, textSize, textColor, textAlign ?? TextAlignmentOptions.Left, panelColor);
+                panel.ConfigureDialogue(
+                    pageText,
+                    i + 1,
+                    pages.Count,
+                    placement,
+                    size,
+                    textSize,
+                    textColor,
+                    textAlign ?? TextAlignmentOptions.TopLeft,
+                    panelColor
+                );
 
                 if (!didFade)
                 {
@@ -148,17 +267,15 @@ namespace DarkMagic
                     await panel.FadeIn(cancellationToken);
                 }
 
-
-
-
-                if (UConfig.TRACE) Debug.Log($"[U] PopDialogue page {i + 1}/{pages.Count}");
+                if (UConfig.TRACE)
+                    Debug.Log($"[U] PopDialogue page {i + 1}/{pages.Count}");
                 V.Broadcast<DialoguePopped>(pageText);
 
                 var res = await panel.AwaitConfirmCancel(cancellationToken);
                 if (res.Cancelled)
                 {
                     _stack.Pop();
-            await panel.FadeOut(CancellationToken.None);
+                    await panel.FadeOut(CancellationToken.None);
                     panel.ReturnToPool(PopupKind.Dialogue);
                     return new Result<bool>(false, true);
                 }
@@ -174,95 +291,296 @@ namespace DarkMagic
             return new Result<bool>(true, false);
         }
 
-        public static async Awaitable<Result<string>> PopChoice(string prompt, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null, params Option[] options)
-            => await PopChoice(prompt, options, cancellationToken: default, placement: Placements.TopCenter, description: null, textSize: textSize, textColor: textColor, textAlign: textAlign, panelColor: panelColor, borderSize: borderSize, borderColor: borderColor);
+        public static async Awaitable<Result<string>> PopChoice(
+            string prompt,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            params Option[] options
+        ) =>
+            await PopChoice(
+                prompt,
+                options,
+                cancellationToken: default,
+                placement: Placements.TopCenter,
+                description: null,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor
+            );
 
-        public static async Awaitable<Result<string>> PopChoice(string prompt, Option[] options, CancellationToken cancellationToken = default, Placements placement = Placements.TopCenter, Func<string, string> description = null, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null)
+        public static async Awaitable<Result<string>> PopChoice(
+            string prompt,
+            Option[] options,
+            CancellationToken cancellationToken = default,
+            Placements placement = Placements.TopCenter,
+            Func<string, string> description = null,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            bool promptAsBanner = false,
+            bool hidePromptIfEmpty = true,
+            Placements? optionsPlacement = null,
+            Placements? descriptionPlacement = null
+        )
         {
             EnsureSystem();
+            UISystem.EnsureEventSystem();
 
-            if (options == null) options = Array.Empty<Option>();
+            bool showPrompt = !(hidePromptIfEmpty && string.IsNullOrWhiteSpace(prompt));
+            bool pushedPrompt = false;
+            var optPlacement = optionsPlacement ?? placement;
+
+            if (options == null)
+                options = Array.Empty<Option>();
+
+            // If options include embedded descriptions and no description function was provided, use them.
+            if (description == null)
+            {
+                bool any = false;
+                var map = new Dictionary<string, string>();
+                for (int i = 0; i < options.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(options[i].Description))
+                    {
+                        any = true;
+                        map[options[i].Label] = options[i].Description;
+                    }
+                }
+                if (any)
+                    description = (lbl) => map.TryGetValue(lbl, out var d) ? d : null;
+            }
+
             if (options.Length == 0)
                 return Result<string>.Canceled();
 
             // Choice is now two panels:
             // 1) Prompt panel (dialogue style, supports pagination)
             // 2) Options panel (tight list under the prompt, right-aligned to the prompt)
-            var promptPanel = _pool.GetOrCreate(PopupKind.Dialogue);
+            UIPanel promptPanel = showPrompt
+                ? _pool.GetOrCreate(promptAsBanner ? PopupKind.Banner : PopupKind.Dialogue)
+                : null;
+            if (!showPrompt && optionsPlacement == null)
+            {
+                // Create an invisible anchor so the options panel lands in the same place as when a prompt exists.
+                // Use the same prompt kind that Menu uses by default (banner) so the right-edge alignment matches.
+                promptPanel = _pool.GetOrCreate(PopupKind.Banner);
+                promptPanel.ConfigureBanner(
+                    text: "",
+                    placement: placement,
+                    size: Sizes.FullWidth,
+                    textSize: textSize,
+                    textColor: textColor,
+                    textAlign: textAlign,
+                    panelColor: panelColor
+                );
+                promptPanel.SetBorder(
+                    borderSize ?? UConfig.BorderSize,
+                    borderColor ?? UConfig.BorderColor
+                );
+                promptPanel.HideForLayout();
+            }
             var optionsPanel = _pool.GetOrCreate(PopupKind.Choice);
 
             // Prompt panel defaults to dialogue-modal width (matches JRPG vibe nicely).
-            var pages = PaginateDialogueWithMarkup(prompt ?? "", size: Sizes.Modal, textSizeOverride: textSize);
-            int pageCount = Mathf.Max(1, pages.Count);
-
-            _stack.Push(promptPanel);
-
-            if (UConfig.TRACE) Debug.Log($"[U] PopChoice: {prompt} ({options.Length} options)");
-
-            for (int i = 0; i < pageCount; i++)
+            if (showPrompt)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _stack.Pop();
-                    promptPanel.ReturnToPool(PopupKind.Dialogue);
-                    optionsPanel.ReturnToPool(PopupKind.Choice);
-                    return Result<string>.Canceled();
-                }
+                _stack.Push(promptPanel);
+                pushedPrompt = true;
 
-                promptPanel.ConfigureDialogue(
-                    text: pages[Mathf.Clamp(i, 0, pages.Count - 1)],
-                    pageIndex: i + 1,
-                    pageCount: pageCount,
-                    placement: placement,
+                var pages = PaginateDialogueWithMarkup(
+                    prompt ?? "",
                     size: Sizes.Modal,
-                    textSize: textSize,
-                    textColor: textColor,
-                    textAlign: textAlign ?? TextAlignmentOptions.Left,
-                    panelColor: panelColor
+                    textSizeOverride: textSize
                 );
-                promptPanel.SetBorder(borderSize ?? UConfig.BorderSize, borderColor ?? UConfig.BorderColor);
+                int pageCount = Mathf.Max(1, pages.Count);
 
-                // Only fade in once at the beginning.
-                if (i == 0) await promptPanel.FadeIn(cancellationToken);
+                if (UConfig.TRACE)
+                    Debug.Log($"[U] PopChoice: {prompt} ({options.Length} options)");
 
-                // On non-final pages: confirm advances, cancel cancels.
-                if (i < pageCount - 1)
+                for (int i = 0; i < pageCount; i++)
                 {
-                    var step = await promptPanel.AwaitConfirmCancel(cancellationToken);
-                    if (step.Cancelled || step.Value == false)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         _stack.Pop();
-                        await promptPanel.FadeOut(CancellationToken.None);
-                        promptPanel.ReturnToPool(PopupKind.Dialogue);
+                        if (promptPanel != null)
+                            promptPanel.ReturnToPool(
+                                (!showPrompt && optionsPlacement == null)
+                                    ? PopupKind.Banner
+                                    : (promptAsBanner ? PopupKind.Banner : PopupKind.Dialogue)
+                            );
                         optionsPanel.ReturnToPool(PopupKind.Choice);
-
-                        V.Broadcast<ChoiceCanceled>(prompt ?? "Choice");
-                        _history.Add($"CANCEL: {prompt}");
                         return Result<string>.Canceled();
                     }
 
-                    // Prevent one press from skipping multiple pages in the same frame.
+                    if (promptAsBanner)
+                    {
+                        promptPanel.ConfigureBanner(
+                            text: pages[Mathf.Clamp(i, 0, pages.Count - 1)],
+                            placement: placement,
+                            size: Sizes.FullWidth,
+                            textSize: textSize,
+                            textColor: textColor,
+                            textAlign: textAlign
+                                ?? U.AlignmentForPlacement(
+                                    placement,
+                                    fallback: TextAlignmentOptions.Center
+                                ),
+                            panelColor: panelColor
+                        );
+                        promptPanel.SetBorder(
+                            borderSize ?? UConfig.BorderSize,
+                            borderColor ?? UConfig.BorderColor
+                        );
+                    }
+                    else
+                    {
+                        promptPanel.ConfigureDialogue(
+                            text: pages[Mathf.Clamp(i, 0, pages.Count - 1)],
+                            pageIndex: i + 1,
+                            pageCount: pageCount,
+                            placement: placement,
+                            size: Sizes.Modal,
+                            textSize: textSize,
+                            textColor: textColor,
+                            textAlign: textAlign ?? TextAlignmentOptions.TopLeft,
+                            panelColor: panelColor
+                        );
+                        promptPanel.SetBorder(
+                            borderSize ?? UConfig.BorderSize,
+                            borderColor ?? UConfig.BorderColor
+                        );
+                    }
+
+                    // Only fade in once at the beginning.
+                    if (i == 0)
+                        await promptPanel.FadeIn(cancellationToken);
+
+                    // On non-final pages: confirm advances, cancel cancels.
+                    if (i < pageCount - 1)
+                    {
+                        var step = await promptPanel.AwaitConfirmCancel(cancellationToken);
+                        if (step.Cancelled || step.Value == false)
+                        {
+                            _stack.Pop();
+                            await promptPanel.FadeOut(CancellationToken.None);
+                            promptPanel.ReturnToPool(
+                                promptAsBanner ? PopupKind.Banner : PopupKind.Dialogue
+                            );
+                            optionsPanel.ReturnToPool(PopupKind.Choice);
+
+                            V.Broadcast<ChoiceCanceled>(prompt ?? "Choice");
+                            _history.Add($"CANCEL: {prompt}");
+                            return Result<string>.Canceled();
+                        }
+
+                        // Prevent one press from skipping multiple pages in the same frame.
+                        await Awaitable.NextFrameAsync(cancellationToken);
+                    }
+                }
+            }
+            else
+            {
+                if (UConfig.TRACE)
+                    Debug.Log($"[U] PopChoice: (no prompt) ({options.Length} options)");
+            }
+
+            // Now that the last page is visible, show the options panel beneath it.
+            optionsPanel.ConfigureChoiceOptionsOnly(
+                options,
+                optPlacement,
+                description,
+                textSize,
+                textColor,
+                textAlign,
+                panelColor,
+                borderSize,
+                borderColor
+            );
+            optionsPanel.SetBorder(
+                borderSize ?? UConfig.BorderSize,
+                borderColor ?? UConfig.BorderColor
+            );
+            if (optionsPlacement == null && promptPanel != null)
+                optionsPanel.AlignBelowRightOf(promptPanel, gapPx: 10);
+            _stack.Push(optionsPanel);
+            await optionsPanel.FadeIn(cancellationToken);
+
+            UIPanel descPanel = null;
+            bool descRunning = false;
+            if (description != null)
+            {
+                descPanel = _pool.GetOrCreate(PopupKind.Banner);
+                _stack.Push(descPanel);
+
+                // Default: sit under the options panel, same right-edge alignment.
+                var descText = description(optionsPanel.GetSelectedLabel());
+                descPanel.ConfigureBanner(
+                    text: string.IsNullOrEmpty(descText) ? "" : descText,
+                    placement: descriptionPlacement ?? placement,
+                    size: Sizes.FullWidth,
+                    textSize: null,
+                    textColor: null,
+                    textAlign: TextAlignmentOptions.Left,
+                    panelColor: panelColor
+                );
+
+                descPanel.SetBorder(
+                    borderSize ?? UConfig.BorderSize,
+                    borderColor ?? UConfig.BorderColor
+                );
+
+                if (descriptionPlacement == null)
+                    descPanel.AlignBelowRightOf(optionsPanel, gapPx: 10);
+
+                await descPanel.FadeIn(cancellationToken);
+
+                descRunning = true;
+                _ = UpdateDescLoop();
+            }
+
+            async Awaitable UpdateDescLoop()
+            {
+                var last = "";
+                while (descRunning && !cancellationToken.IsCancellationRequested)
+                {
+                    if (descPanel == null)
+                        break;
+                    var lbl = optionsPanel.GetSelectedLabel();
+                    var d = description(lbl);
+                    d ??= "";
+                    if (d != last)
+                    {
+                        last = d;
+                        descPanel.SetText(d);
+                    }
                     await Awaitable.NextFrameAsync(cancellationToken);
                 }
             }
 
-            // Now that the last page is visible, show the options panel beneath it.
-            optionsPanel.ConfigureChoiceOptionsOnly(options, placement, description, textSize, textColor, textAlign, panelColor);
-            optionsPanel.SetBorder(borderSize ?? UConfig.BorderSize, borderColor ?? UConfig.BorderColor);
-            optionsPanel.AlignBelowRightOf(promptPanel, gapPx: 10);
-            _stack.Push(optionsPanel);
-            await optionsPanel.FadeIn(cancellationToken);
-
             var res = await optionsPanel.AwaitChoice(cancellationToken);
+            descRunning = false;
 
             _stack.Pop(); // options panel
-            _stack.Pop(); // prompt panel
+            if (pushedPrompt)
+                _stack.Pop(); // prompt panel
 
             await optionsPanel.FadeOut(CancellationToken.None);
             optionsPanel.ReturnToPool(PopupKind.Choice);
 
-            await promptPanel.FadeOut(CancellationToken.None);
-            promptPanel.ReturnToPool(PopupKind.Dialogue);
+            if (promptPanel != null && pushedPrompt)
+                await promptPanel.FadeOut(CancellationToken.None);
+            if (promptPanel != null && pushedPrompt)
+                promptPanel.ReturnToPool(promptAsBanner ? PopupKind.Banner : PopupKind.Dialogue);
 
             if (res.Cancelled)
             {
@@ -277,7 +595,6 @@ namespace DarkMagic
             return res;
         }
 
-
         // Student-first overloads (avoid accidental binding of option strings to textSize)
         public static async Awaitable<Result<string>> PopChoice(
             string prompt,
@@ -291,9 +608,22 @@ namespace DarkMagic
             TextAlignmentOptions? textAlign = null,
             Color? panelColor = null,
             int? borderSize = null,
-            Color? borderColor = null)
+            Color? borderColor = null
+        )
         {
-            return await PopChoice(prompt, new[] { optionA, optionB }, cancellationToken: cancellationToken, placement: placement, description: description, textSize: textSize, textColor: textColor, textAlign: textAlign, panelColor: panelColor, borderSize: borderSize, borderColor: borderColor);
+            return await PopChoice(
+                prompt,
+                new[] { optionA, optionB },
+                cancellationToken: cancellationToken,
+                placement: placement,
+                description: description,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor
+            );
         }
 
         public static async Awaitable<Result<string>> PopChoice(
@@ -309,29 +639,274 @@ namespace DarkMagic
             TextAlignmentOptions? textAlign = null,
             Color? panelColor = null,
             int? borderSize = null,
-            Color? borderColor = null)
+            Color? borderColor = null
+        )
         {
-            return await PopChoice(prompt, new[] { optionA, optionB, optionC }, cancellationToken: cancellationToken, placement: placement, description: description, textSize: textSize, textColor: textColor, textAlign: textAlign, panelColor: panelColor, borderSize: borderSize, borderColor: borderColor);
+            return await PopChoice(
+                prompt,
+                new[] { optionA, optionB, optionC },
+                cancellationToken: cancellationToken,
+                placement: placement,
+                description: description,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor
+            );
         }
 
-        public static async Awaitable<Result<string>> PopChoice(string prompt, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null, params string[] options)
-            => await PopChoice(prompt, options, cancellationToken: default, placement: Placements.TopCenter, description: null, textSize: textSize, textColor: textColor, textAlign: textAlign, panelColor: panelColor, borderSize: borderSize, borderColor: borderColor);
+        public static async Awaitable<Result<string>> PopChoice(
+            string prompt,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            params string[] options
+        ) =>
+            await PopChoice(
+                prompt,
+                options,
+                cancellationToken: default,
+                placement: Placements.TopCenter,
+                description: null,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor
+            );
 
-        public static async Awaitable<Result<string>> PopChoice(string prompt, string[] options, CancellationToken cancellationToken = default, Placements placement = Placements.TopCenter, Func<string, string> description = null, int? textSize = null, Color? textColor = null, TextAlignmentOptions? textAlign = null, Color? panelColor = null, int? borderSize = null, Color? borderColor = null)
+        public static async Awaitable<Result<string>> PopChoice(
+            string prompt,
+            string[] options,
+            CancellationToken cancellationToken = default,
+            Placements placement = Placements.TopCenter,
+            Func<string, string> description = null,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null
+        )
         {
-            if (options == null) options = Array.Empty<string>();
+            if (options == null)
+                options = Array.Empty<string>();
             var opts = ToOptions(options);
-            return await PopChoice(prompt, opts, cancellationToken: cancellationToken, placement: placement, description: description, textSize: textSize, textColor: textColor, textAlign: textAlign, panelColor: panelColor, borderSize: borderSize, borderColor: borderColor);
+            return await PopChoice(
+                prompt,
+                opts,
+                cancellationToken: cancellationToken,
+                placement: placement,
+                description: description,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor
+            );
         }
 
         public static async Awaitable<Result<string>> Menu(string title, params string[] options)
-            => await PopChoice(title, options);
+        {
+            var opts = ParseOptionsWithDescriptions(options, delimiter: ":::");
+            return await PopChoice(
+                title,
+                opts,
+                cancellationToken: default,
+                placement: Placements.TopCenter,
+                promptAsBanner: true
+            );
+        }
 
-        public static IDisplayHandle Display(Func<string> text, Placements placement = Placements.TopLeft, Sizes size = Sizes.Inline, Color? background = null, Color? textColor = null, int paddingPx = 8)
+        /// <summary>
+        /// Menu where you can place the options panel independently of the prompt.
+        /// Prompt uses <paramref name="placement"/>; options use <paramref name="optionsPlacement"/>.
+        /// </summary>
+
+        /// <summary>
+        /// Menu where you can place the options panel (prompt stays at the default).
+        /// </summary>
+        public static async Awaitable<Result<string>> Menu(
+            string title,
+            Placements optionsPlacement,
+            params string[] options
+        )
+        {
+            return await Menu(
+                title,
+                placement: Placements.TopCenter,
+                optionsPlacement: optionsPlacement,
+                options: options
+            );
+        }
+
+        public static async Awaitable<Result<string>> Menu(
+            string title,
+            Placements placement,
+            Placements optionsPlacement,
+            params string[] options
+        )
+        {
+            var opts = ParseOptionsWithDescriptions(options, delimiter: ":::");
+            return await PopChoice(
+                title,
+                opts,
+                cancellationToken: default,
+                placement: placement,
+                promptAsBanner: true,
+                optionsPlacement: optionsPlacement
+            );
+        }
+
+        /// <summary>
+        /// Menu with optional prompt + options placement + descriptions.
+        /// </summary>
+        public static async Awaitable<Result<string>> Menu(
+            string title,
+            CancellationToken cancellationToken = default,
+            Placements placement = Placements.TopCenter,
+            bool promptAsBanner = false,
+            bool hidePromptIfEmpty = true,
+            Placements? optionsPlacement = null,
+            Placements? descriptionPlacement = null,
+            Func<string, string> description = null,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null,
+            params string[] options
+        )
+        {
+            return await PopChoice(
+                title,
+                ToOptions(options),
+                cancellationToken: cancellationToken,
+                placement: placement,
+                description: description,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor,
+                promptAsBanner: promptAsBanner,
+                hidePromptIfEmpty: hidePromptIfEmpty,
+                optionsPlacement: optionsPlacement,
+                descriptionPlacement: descriptionPlacement
+            );
+        }
+
+        /// <summary>
+        /// Menu with (label, description) tuples.
+        /// </summary>
+        public static async Awaitable<Result<string>> Menu(
+            string title,
+            params (string label, string description)[] options
+        )
+        {
+            var opts = new Option[options?.Length ?? 0];
+            for (int i = 0; i < opts.Length; i++)
+                opts[i] = new Option(options[i].label, options[i].description);
+            return await PopChoice(
+                title,
+                opts,
+                cancellationToken: default,
+                placement: Placements.TopCenter
+            );
+        }
+
+        /// <summary>
+        /// Generic menu: returns the selected item (not just a string label).
+        /// </summary>
+        public static async Awaitable<Result<T>> Menu<T>(
+            string title,
+            IReadOnlyList<T> items,
+            Func<T, string> label,
+            Func<T, string> description = null,
+            CancellationToken cancellationToken = default,
+            Placements placement = Placements.TopCenter,
+            bool promptAsBanner = false,
+            bool hidePromptIfEmpty = true,
+            Placements? optionsPlacement = null,
+            Placements? descriptionPlacement = null,
+            int? textSize = null,
+            Color? textColor = null,
+            TextAlignmentOptions? textAlign = null,
+            Color? panelColor = null,
+            int? borderSize = null,
+            Color? borderColor = null
+        )
+        {
+            if (items == null)
+                return Result<T>.Canceled();
+            label ??= (t => t?.ToString() ?? "");
+
+            var opts = new Option[items.Count];
+            for (int i = 0; i < items.Count; i++)
+                opts[i] = new Option(
+                    label(items[i]),
+                    description != null ? description(items[i]) : null
+                );
+
+            var res = await PopChoice(
+                title,
+                opts,
+                cancellationToken: cancellationToken,
+                placement: placement,
+                description: null,
+                textSize: textSize,
+                textColor: textColor,
+                textAlign: textAlign,
+                panelColor: panelColor,
+                borderSize: borderSize,
+                borderColor: borderColor,
+                promptAsBanner: promptAsBanner,
+                hidePromptIfEmpty: hidePromptIfEmpty,
+                optionsPlacement: optionsPlacement,
+                descriptionPlacement: descriptionPlacement
+            );
+
+            if (!!res.Cancelled)
+                return Result<T>.Canceled();
+
+            // Map back by label match (first match). Prefer index map when possible.
+            // We store the chosen label; find the corresponding item.
+            var chosenLabel = res.Value;
+            for (int i = 0; i < opts.Length; i++)
+                if (opts[i].Label == chosenLabel)
+                    return new Result<T>(items[i], false);
+
+            return Result<T>.Canceled();
+        }
+
+        public static IDisplayHandle Display(
+            Func<string> text,
+            Placements placement = Placements.TopLeft,
+            Sizes size = Sizes.Inline,
+            Color? background = null,
+            Color? textColor = null,
+            int paddingPx = 8
+        )
         {
             EnsureSystem();
             // Display is non-interactive; no EventSystem needed.
-            return _display.Create(text, placement, size, background ?? new Color(0,0,0,0), textColor ?? UConfig.TextColor, paddingPx);
+            return _display.Create(
+                text,
+                placement,
+                size,
+                background ?? new Color(0, 0, 0, 0),
+                textColor ?? UConfig.TextColor,
+                paddingPx
+            );
         }
 
         public static IReadOnlyList<string> History => _history.Items;
@@ -340,28 +915,38 @@ namespace DarkMagic
         // Internal systems
         // ============================================================
 
-        private enum PopupKind { Banner, Dialogue, Choice }
+        private enum PopupKind
+        {
+            Banner,
+            Dialogue,
+            Choice,
+        }
 
-                private static TMP_FontAsset _defaultFontAsset;
+        private static TMP_FontAsset _defaultFontAsset;
         private static TMP_FontAsset DefaultFontAsset
         {
             get
             {
-                if (_defaultFontAsset != null) return _defaultFontAsset;
+                if (_defaultFontAsset != null)
+                    return _defaultFontAsset;
                 // Priority: user config -> package fallback -> TMP project default
                 _defaultFontAsset = UConfig.FontAsset;
-                if (_defaultFontAsset != null) return _defaultFontAsset;
-                _defaultFontAsset = (UConfig.StylePreset == UStylePreset.JRPG)
-                    ? Resources.Load<TMP_FontAsset>("Default/Default SDF")
-                    : Resources.Load<TMP_FontAsset>("Fonts/Liberation/LiberationSans SDF");
-                if (_defaultFontAsset != null) return _defaultFontAsset;
+                if (_defaultFontAsset != null)
+                    return _defaultFontAsset;
+                _defaultFontAsset =
+                    (UConfig.StylePreset == UStylePreset.JRPG)
+                        ? Resources.Load<TMP_FontAsset>("Default/Default SDF")
+                        : Resources.Load<TMP_FontAsset>("Fonts/Liberation/LiberationSans SDF");
+                if (_defaultFontAsset != null)
+                    return _defaultFontAsset;
                 _defaultFontAsset = TMP_Settings.defaultFontAsset;
-                if (_defaultFontAsset != null) return _defaultFontAsset;
+                if (_defaultFontAsset != null)
+                    return _defaultFontAsset;
                 return _defaultFontAsset;
             }
         }
 
-private static bool _initialized;
+        private static bool _initialized;
         private static UISystem _sys;
         private static PanelPool _pool;
         private static PanelStack _stack;
@@ -370,7 +955,8 @@ private static bool _initialized;
 
         private static void EnsureSystem()
         {
-            if (_initialized) return;
+            if (_initialized)
+                return;
 
             UConfig.ApplyUserOverrides();
             UConfig.ApplyStylePreset();
@@ -385,52 +971,61 @@ private static bool _initialized;
 
         private static string Clamp(string s, int max)
         {
-            if (string.IsNullOrEmpty(s)) return "";
-            if (s.Length <= max) return s;
+            if (string.IsNullOrEmpty(s))
+                return "";
+            if (s.Length <= max)
+                return s;
             return s.Substring(0, max - 1) + "…";
         }
 
-
-private static string ClampRichText(string s, int maxVisibleChars)
-{
-    if (string.IsNullOrEmpty(s)) return "";
-    if (maxVisibleChars <= 0) return s;
-
-    // Fast path: no tags.
-    if (s.IndexOf('<') < 0)
-    {
-        if (s.Length <= maxVisibleChars) return s;
-        return s.Substring(0, Math.Max(0, maxVisibleChars - 1)) + "…";
-    }
-
-    int visible = 0;
-    bool inTag = false;
-    int cut = s.Length;
-
-    for (int i = 0; i < s.Length; i++)
-    {
-        char c = s[i];
-
-        if (c == '<') { inTag = true; continue; }
-        if (inTag)
+        private static string ClampRichText(string s, int maxVisibleChars)
         {
-            if (c == '>') inTag = false;
-            continue;
+            if (string.IsNullOrEmpty(s))
+                return "";
+            if (maxVisibleChars <= 0)
+                return s;
+
+            // Fast path: no tags.
+            if (s.IndexOf('<') < 0)
+            {
+                if (s.Length <= maxVisibleChars)
+                    return s;
+                return s.Substring(0, Math.Max(0, maxVisibleChars - 1)) + "…";
+            }
+
+            int visible = 0;
+            bool inTag = false;
+            int cut = s.Length;
+
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+
+                if (c == '<')
+                {
+                    inTag = true;
+                    continue;
+                }
+                if (inTag)
+                {
+                    if (c == '>')
+                        inTag = false;
+                    continue;
+                }
+
+                visible++;
+                if (visible >= maxVisibleChars)
+                {
+                    cut = i + 1;
+                    break;
+                }
+            }
+
+            if (cut >= s.Length)
+                return s;
+
+            return s.Substring(0, Math.Max(0, cut - 1)) + "…";
         }
-
-        visible++;
-        if (visible >= maxVisibleChars)
-        {
-            cut = i + 1;
-            break;
-        }
-    }
-
-    if (cut >= s.Length) return s;
-
-    return s.Substring(0, Math.Max(0, cut - 1)) + "…";
-}
-
 
         private static List<string> Paginate(string text, int maxChars)
         {
@@ -455,204 +1050,233 @@ private static string ClampRichText(string s, int maxVisibleChars)
                 }
 
                 string chunk = text.Substring(i, end - i).Trim();
-                if (chunk.Length > 0) pages.Add(chunk);
+                if (chunk.Length > 0)
+                    pages.Add(chunk);
 
                 i = end;
             }
 
-            if (pages.Count == 0) pages.Add("");
+            if (pages.Count == 0)
+                pages.Add("");
             return pages;
         }
 
-        
-// ----------------------------
-// Markup preprocessing
-// ----------------------------
-// TMP already supports rich text tags like <b>, <i>, <size=..>, <color=#..>.
-// We add two extra "pseudo-html" helpers:
-//   <br/>  -> newline
-//   <pbr/> -> forced page break (dialogue pagination)
-//
-// We also support a tiny convenience color syntax:
-//   <color=Colors.gold> ... </color>
-//   <color=U.Colors.gold> ... </color>
-//
-// Which gets converted into a TMP hex color tag:
-//   <color=#FFD700> ... </color>
-private static readonly System.Text.RegularExpressions.Regex _rxBr =
-    new System.Text.RegularExpressions.Regex(@"<\s*br\s*/?\s*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+        // ----------------------------
+        // Markup preprocessing
+        // ----------------------------
+        // TMP already supports rich text tags like <b>, <i>, <size=..>, <color=#..>.
+        // We add two extra "pseudo-html" helpers:
+        //   <br/>  -> newline
+        //   <pbr/> -> forced page break (dialogue pagination)
+        //
+        // We also support a tiny convenience color syntax:
+        //   <color=Colors.gold> ... </color>
+        //   <color=U.Colors.gold> ... </color>
+        //
+        // Which gets converted into a TMP hex color tag:
+        //   <color=#FFD700> ... </color>
+        private static readonly System.Text.RegularExpressions.Regex _rxBr =
+            new System.Text.RegularExpressions.Regex(
+                @"<\s*br\s*/?\s*>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    | System.Text.RegularExpressions.RegexOptions.Compiled
+            );
 
-private static readonly System.Text.RegularExpressions.Regex _rxPbr =
-    new System.Text.RegularExpressions.Regex(@"<\s*pbr\s*/?\s*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex _rxPbr =
+            new System.Text.RegularExpressions.Regex(
+                @"<\s*pbr\s*/?\s*>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    | System.Text.RegularExpressions.RegexOptions.Compiled
+            );
 
-private static readonly System.Text.RegularExpressions.Regex _rxColorOpen =
-    new System.Text.RegularExpressions.Regex(@"<\s*color\s*=\s*([^>\s]+)\s*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex _rxColorOpen =
+            new System.Text.RegularExpressions.Regex(
+                @"<\s*color\s*=\s*([^>\s]+)\s*>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    | System.Text.RegularExpressions.RegexOptions.Compiled
+            );
 
-private static string PreprocessMarkupInline(string raw)
-{
-    if (string.IsNullOrEmpty(raw)) return raw ?? "";
-
-    // Normalize newlines and convert <br/>
-    string t = raw.Replace("\r\n", "\n").Replace("\r", "\n");
-    t = _rxBr.Replace(t, "\n");
-
-    // Convert convenience color tokens like Colors.gold
-    t = _rxColorOpen.Replace(t, m =>
-    {
-        string val = m.Groups[1].Value ?? "";
-        string lowered = val.Trim();
-
-        // If it's already a hex color or a named TMP color, leave it alone.
-        if (lowered.StartsWith("#")) return m.Value;
-        if (lowered.IndexOf("Colors.", StringComparison.OrdinalIgnoreCase) >= 0)
+        private static string PreprocessMarkupInline(string raw)
         {
-            // Extract the part after the last dot.
-            int dot = lowered.LastIndexOf('.');
-            string name = dot >= 0 ? lowered.Substring(dot + 1) : lowered;
+            if (string.IsNullOrEmpty(raw))
+                return raw ?? "";
 
-            if (TryResolveNamedColor(name, out var col))
+            // Normalize newlines and convert <br/>
+            string t = raw.Replace("\r\n", "\n").Replace("\r", "\n");
+            t = _rxBr.Replace(t, "\n");
+
+            // Convert convenience color tokens like Colors.gold
+            t = _rxColorOpen.Replace(
+                t,
+                m =>
+                {
+                    string val = m.Groups[1].Value ?? "";
+                    string lowered = val.Trim();
+
+                    // If it's already a hex color or a named TMP color, leave it alone.
+                    if (lowered.StartsWith("#"))
+                        return m.Value;
+                    if (lowered.IndexOf("Colors.", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        // Extract the part after the last dot.
+                        int dot = lowered.LastIndexOf('.');
+                        string name = dot >= 0 ? lowered.Substring(dot + 1) : lowered;
+
+                        if (TryResolveNamedColor(name, out var col))
+                        {
+                            string hex = "#" + ColorUtility.ToHtmlStringRGB(col);
+                            return $"<color={hex}>";
+                        }
+                    }
+
+                    return m.Value;
+                }
+            );
+
+            // If someone put <pbr/> in a banner or other non-paginated text,
+            // treat it as a blank-line separator.
+            t = _rxPbr.Replace(t, "\n\n");
+
+            return t;
+        }
+
+        private static string PreprocessMarkup(string raw, bool allowPageBreaks)
+        {
+            var s = PreprocessMarkupInline(raw);
+
+            if (!allowPageBreaks)
             {
-                string hex = "#" + ColorUtility.ToHtmlStringRGB(col);
-                return $"<color={hex}>";
+                // For non-paginated contexts (HUD displays), treat page breaks as simple newlines.
+                s = _rxPbr.Replace(s, "\n");
             }
 
-
+            return s;
         }
 
-        return m.Value;
-    });
-
-    // If someone put <pbr/> in a banner or other non-paginated text,
-    // treat it as a blank-line separator.
-    t = _rxPbr.Replace(t, "\n\n");
-
-    return t;
-}
-
-private static string PreprocessMarkup(string raw, bool allowPageBreaks)
-{
-    var s = PreprocessMarkupInline(raw);
-
-    if (!allowPageBreaks)
-    {
-        // For non-paginated contexts (HUD displays), treat page breaks as simple newlines.
-        s = _rxPbr.Replace(s, "\n");
-    }
-
-    return s;
-}
-
-
-private static string[] SplitByForcedPageBreaks(string raw)
-{
-    if (raw == null) return new[] { "" };
-
-    // Convert <br/> and color tokens first, BUT keep <pbr/> for splitting.
-    string t = raw.Replace("\r\n", "\n").Replace("\r", "\n");
-    t = _rxBr.Replace(t, "\n");
-    t = _rxColorOpen.Replace(t, m =>
-    {
-        string val = m.Groups[1].Value ?? "";
-        string lowered = val.Trim();
-
-        if (lowered.StartsWith("#")) return m.Value;
-        if (lowered.IndexOf("Colors.", StringComparison.OrdinalIgnoreCase) >= 0)
+        private static string[] SplitByForcedPageBreaks(string raw)
         {
-            int dot = lowered.LastIndexOf('.');
-            string name = dot >= 0 ? lowered.Substring(dot + 1) : lowered;
+            if (raw == null)
+                return new[] { "" };
 
-            if (TryResolveNamedColor(name, out var col))
+            // Convert <br/> and color tokens first, BUT keep <pbr/> for splitting.
+            string t = raw.Replace("\r\n", "\n").Replace("\r", "\n");
+            t = _rxBr.Replace(t, "\n");
+            t = _rxColorOpen.Replace(
+                t,
+                m =>
+                {
+                    string val = m.Groups[1].Value ?? "";
+                    string lowered = val.Trim();
+
+                    if (lowered.StartsWith("#"))
+                        return m.Value;
+                    if (lowered.IndexOf("Colors.", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        int dot = lowered.LastIndexOf('.');
+                        string name = dot >= 0 ? lowered.Substring(dot + 1) : lowered;
+
+                        if (TryResolveNamedColor(name, out var col))
+                        {
+                            string hex = "#" + ColorUtility.ToHtmlStringRGB(col);
+                            return $"<color={hex}>";
+                        }
+                    }
+
+                    return m.Value;
+                }
+            );
+
+            // Now split on <pbr/>
+            return _rxPbr.Split(t);
+        }
+
+        private static bool TryResolveNamedColor(string name, out Color color)
+        {
+            color = default;
+
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            switch (name.Trim().ToLowerInvariant())
             {
-                string hex = "#" + ColorUtility.ToHtmlStringRGB(col);
-                return $"<color={hex}>";
+                case "gold":
+                    color = UConfig.SelectedTextColor;
+                    return true;
+
+                case "white":
+                    color = Color.white;
+                    return true;
+
+                case "black":
+                    color = Color.black;
+                    return true;
+
+                case "red":
+                    color = Color.red;
+                    return true;
+
+                case "green":
+                    color = Color.green;
+                    return true;
+
+                case "blue":
+                    color = Color.blue;
+                    return true;
+
+                case "cyan":
+                    color = Color.cyan;
+                    return true;
+
+                case "magenta":
+                    color = Color.magenta;
+                    return true;
+
+                case "yellow":
+                    color = Color.yellow;
+                    return true;
             }
+
+            return false;
         }
 
-        return m.Value;
-    });
-
-    // Now split on <pbr/>
-    return _rxPbr.Split(t);
-}
-
-private static bool TryResolveNamedColor(string name, out Color color)
-{
-    color = default;
-
-    if (string.IsNullOrWhiteSpace(name)) return false;
-
-    switch (name.Trim().ToLowerInvariant())
-    {
-        case "gold":
-            color = UConfig.SelectedTextColor;
-            return true;
-
-        case "white":
-            color = Color.white;
-            return true;
-
-        case "black":
-            color = Color.black;
-            return true;
-
-        case "red":
-            color = Color.red;
-            return true;
-
-        case "green":
-            color = Color.green;
-            return true;
-
-        case "blue":
-            color = Color.blue;
-            return true;
-
-        case "cyan":
-            color = Color.cyan;
-            return true;
-
-        case "magenta":
-            color = Color.magenta;
-            return true;
-
-        case "yellow":
-            color = Color.yellow;
-            return true;
-    }
-
-    return false;
-}
-
-private static List<string> PaginateDialogueWithMarkup(string raw, Sizes size, int? textSizeOverride)
-{
-    var segments = SplitByForcedPageBreaks(raw);
-    var pages = new List<string>();
-
-    foreach (var seg in segments)
-    {
-        string cleaned = PreprocessMarkupInline(seg);
-
-        // If the segment is empty, still force a page.
-        if (string.IsNullOrEmpty(cleaned))
+        private static List<string> PaginateDialogueWithMarkup(
+            string raw,
+            Sizes size,
+            int? textSizeOverride
+        )
         {
-            pages.Add("");
-            continue;
+            var segments = SplitByForcedPageBreaks(raw);
+            var pages = new List<string>();
+
+            foreach (var seg in segments)
+            {
+                string cleaned = PreprocessMarkupInline(seg);
+
+                // If the segment is empty, still force a page.
+                if (string.IsNullOrEmpty(cleaned))
+                {
+                    pages.Add("");
+                    continue;
+                }
+
+                var segPages = PaginateDialogue(cleaned, size, textSizeOverride);
+                if (segPages == null || segPages.Count == 0)
+                    pages.Add(cleaned);
+                else
+                    pages.AddRange(segPages);
+            }
+
+            if (pages.Count == 0)
+                pages.Add("");
+            return pages;
         }
 
-        var segPages = PaginateDialogue(cleaned, size, textSizeOverride);
-        if (segPages == null || segPages.Count == 0) pages.Add(cleaned);
-        else pages.AddRange(segPages);
-    }
-
-    if (pages.Count == 0) pages.Add("");
-    return pages;
-}
-
-private static List<string> PaginateDialogue(string text, Sizes size, int? textSizeOverride)
+        private static List<string> PaginateDialogue(string text, Sizes size, int? textSizeOverride)
         {
             // TMP-aware pagination using GetPreferredValues so pages fit the current box.
             // Still falls back to DialogueMaxCharsPerPage if TMP isn't available for some reason.
-            if (string.IsNullOrEmpty(text)) return new List<string> { "" };
+            if (string.IsNullOrEmpty(text))
+                return new List<string> { "" };
 
             int fontSize = textSizeOverride ?? UConfig.BodyFontSize;
 
@@ -662,11 +1286,14 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 Sizes.Inline => 0.5f,
                 Sizes.FullWidth => 1f,
                 Sizes.Modal => UConfig.ModalWidthPct,
-                _ => 1f
+                _ => 1f,
             };
 
             float boxW = Mathf.Max(64f, Screen.width * widthPct - (UConfig.DialoguePaddingX * 2));
-            float boxH = Mathf.Max(64f, Screen.height * UConfig.DialogueHeightPct - (UConfig.DialoguePaddingY * 2));
+            float boxH = Mathf.Max(
+                64f,
+                Screen.height * UConfig.DialogueHeightPct - (UConfig.DialoguePaddingY * 2)
+            );
 
             var font = DefaultFontAsset;
             if (font == null)
@@ -725,7 +1352,8 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                         if (sb.Length > 0)
                         {
                             // Avoid leading spaces right after a newline.
-                            if (sb[sb.Length - 1] != '\n') sb.Append(' ');
+                            if (sb[sb.Length - 1] != '\n')
+                                sb.Append(' ');
                         }
                         sb.Append(tok);
                     }
@@ -752,7 +1380,10 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 {
                     // Can't fit even one word. Chunk by chars as a last resort.
                     string remaining = string.Join(" ", words, i, words.Length - i);
-                    var chunks = ChunkByChars(remaining, Mathf.Max(20, UConfig.DialogueMaxCharsPerPage / 2));
+                    var chunks = ChunkByChars(
+                        remaining,
+                        Mathf.Max(20, UConfig.DialogueMaxCharsPerPage / 2)
+                    );
                     pages.AddRange(chunks);
                     break;
                 }
@@ -763,7 +1394,8 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 i = lastGoodIndex;
             }
 
-            if (pages.Count == 0) pages.Add(text);
+            if (pages.Count == 0)
+                pages.Add(text);
             return pages;
         }
 
@@ -779,10 +1411,10 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 pages.Add(text.Substring(idx, len));
                 idx += len;
             }
-            if (pages.Count == 0) pages.Add(text);
+            if (pages.Count == 0)
+                pages.Add(text);
             return pages;
         }
-
 
         // ============================================================
         // UISystem
@@ -801,10 +1433,12 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 if (existing != null && existing.GetComponent<Canvas>() != null)
                 {
                     Root = existing;
-                    if (Root.GetComponent<RectTransform>() == null) Root.AddComponent<RectTransform>();
+                    if (Root.GetComponent<RectTransform>() == null)
+                        Root.AddComponent<RectTransform>();
                     Canvas = Root.GetComponent<Canvas>();
                     this.EnsureCanvasScaler();
-                    if (Canvas == null) Canvas = Root.AddComponent<Canvas>();
+                    if (Canvas == null)
+                        Canvas = Root.AddComponent<Canvas>();
                 }
                 else
                 {
@@ -835,15 +1469,19 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 // EventSystem is created lazily only when interactive UI is shown.
             }
 
-
             private void EnsureCanvasScaler()
             {
                 var scaler = Root.GetComponent<UnityEngine.UI.CanvasScaler>();
-                if (scaler == null) scaler = Root.AddComponent<UnityEngine.UI.CanvasScaler>();
+                if (scaler == null)
+                    scaler = Root.AddComponent<UnityEngine.UI.CanvasScaler>();
 
                 scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = UConfig.ReferenceResolution;
-                scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.screenMatchMode = UnityEngine
+                    .UI
+                    .CanvasScaler
+                    .ScreenMatchMode
+                    .MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
             }
 
@@ -851,10 +1489,11 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
 
             public static void EnsureEventSystem()
             {
-                if (_eventSystemEnsured) return;
+                if (_eventSystemEnsured)
+                    return;
                 _eventSystemEnsured = true;
 
-                if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() != null)
+                if (UnityEngine.Object.FindAnyObjectByType<EventSystem>() != null)
                     return;
 
                 var es = new GameObject("EventSystem");
@@ -862,8 +1501,12 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
 
                 // Prefer the new Input System UI module if available.
                 var isuiType =
-                    Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem") ??
-                    Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem.UI");
+                    Type.GetType(
+                        "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem"
+                    )
+                    ?? Type.GetType(
+                        "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem.UI"
+                    );
 
                 if (isuiType != null)
                 {
@@ -873,7 +1516,9 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 {
                     // Fallback: legacy module (will throw if project is set to "Input System Package (New)" only).
                     es.AddComponent<StandaloneInputModule>();
-                    Debug.LogWarning("[U] Using StandaloneInputModule (legacy). If your project uses the new Input System only, install/enable the Input System package UI module (InputSystemUIInputModule).");
+                    Debug.LogWarning(
+                        "[U] Using StandaloneInputModule (legacy). If your project uses the new Input System only, install/enable the Input System package UI module (InputSystemUIInputModule)."
+                    );
                 }
 
                 UnityEngine.Object.DontDestroyOnLoad(es);
@@ -891,10 +1536,17 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 return go.GetComponent<RectTransform>();
             }
 
-            public static TMP_Text AddTMP(GameObject go, TMP_FontAsset font, int size, Color color, TextAlignmentOptions align)
+            public static TMP_Text AddTMP(
+                GameObject go,
+                TMP_FontAsset font,
+                int size,
+                Color color,
+                TextAlignmentOptions align
+            )
             {
                 var t = go.AddComponent<TextMeshProUGUI>();
-                if (font != null) t.font = font;
+                if (font != null)
+                    t.font = font;
                 t.fontSize = size;
                 t.color = color;
                 t.alignment = align;
@@ -916,7 +1568,10 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
 
             private Image _bg;
             private CanvasGroup _cg;
-            private Image _borderTop, _borderBottom, _borderLeft, _borderRight;
+            private Image _borderTop,
+                _borderBottom,
+                _borderLeft,
+                _borderRight;
             private int? _overrideBorderSize;
             private Color? _overrideBorderColor;
 
@@ -945,11 +1600,10 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
 
                 _bg = _go.AddComponent<Image>();
                 _bg.color = UConfig.PanelColor;
-                 _cg = _go.AddComponent<CanvasGroup>();
-                 _cg.alpha = 1f;
-                 _cg.interactable = true;
-                 _cg.blocksRaycasts = true;
-
+                _cg = _go.AddComponent<CanvasGroup>();
+                _cg.alpha = 1f;
+                _cg.interactable = true;
+                _cg.blocksRaycasts = true;
 
                 _go.SetActive(false);
             }
@@ -960,9 +1614,25 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 _pool.Return(kind, this);
             }
 
-            public void ConfigureBanner(string text, Placements placement, Sizes size, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor)
+            public void ConfigureBanner(
+                string text,
+                Placements placement,
+                Sizes size,
+                int? textSize,
+                Color? textColor,
+                TextAlignmentOptions? textAlign,
+                Color? panelColor
+            )
             {
                 EnsureText();
+
+                // Avoid one-frame flashes when reusing pooled panels, but don't hide a panel that's already visible (pagination).
+                if (!_go.activeSelf)
+                {
+                    _cg.alpha = 0f;
+                    _cg.interactable = false;
+                    _cg.blocksRaycasts = false;
+                }
 
                 // Always reset to defaults first (panels are pooled).
                 _overrideTextSize = textSize;
@@ -974,30 +1644,63 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 _go.SetActive(true);
                 _bg.color = _overridePanelColor ?? UConfig.PanelColor;
 
-                _text.rectTransform.offsetMin = new Vector2(UConfig.BannerPaddingX, UConfig.BannerPaddingY);
-                _text.rectTransform.offsetMax = new Vector2(-UConfig.BannerPaddingX, -UConfig.BannerPaddingY);
+                _text.rectTransform.offsetMin = new Vector2(
+                    UConfig.BannerPaddingX,
+                    UConfig.BannerPaddingY
+                );
+                _text.rectTransform.offsetMax = new Vector2(
+                    -UConfig.BannerPaddingX,
+                    -UConfig.BannerPaddingY
+                );
                 _text.lineSpacing = UConfig.BannerLineSpacing;
 
                 _text.font = _sys.ResolveFont();
                 _text.fontSize = UConfig.BannerFontSize;
                 _text.color = UConfig.TextColor;
-                _text.alignment = U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Center);
+                _text.alignment = U.AlignmentForPlacement(
+                    placement,
+                    fallback: TextAlignmentOptions.Center
+                );
 
-                if (_overrideTextSize.HasValue) _text.fontSize = _overrideTextSize.Value;
-                if (_overrideTextColor.HasValue) _text.color = _overrideTextColor.Value;
-                if (_overrideTextAlign.HasValue) _text.alignment = _overrideTextAlign.Value;
+                if (_overrideTextSize.HasValue)
+                    _text.fontSize = _overrideTextSize.Value;
+                if (_overrideTextColor.HasValue)
+                    _text.color = _overrideTextColor.Value;
+                if (_overrideTextAlign.HasValue)
+                    _text.alignment = _overrideTextAlign.Value;
 
                 _text.text = text;
 
-                ApplyPlacement(placement, widthPct: size == Sizes.FullWidth ? 1f : 0.5f, heightPct: UConfig.BannerHeightPct);
+                ApplyPlacement(
+                    placement,
+                    widthPct: size == Sizes.FullWidth ? 1f : 0.5f,
+                    heightPct: UConfig.BannerHeightPct
+                );
                 ClearChoice();
                 ClearPage();
             }
 
-            public void ConfigureDialogue(string text, int pageIndex, int pageCount, Placements placement, Sizes size, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor)
+            public void ConfigureDialogue(
+                string text,
+                int pageIndex,
+                int pageCount,
+                Placements placement,
+                Sizes size,
+                int? textSize,
+                Color? textColor,
+                TextAlignmentOptions? textAlign,
+                Color? panelColor
+            )
             {
-                EnsureText();
+                // Avoid one-frame flashes when reusing pooled panels, but don't hide a panel that's already visible (pagination).
+                if (!_go.activeSelf)
+                {
+                    _cg.alpha = 0f;
+                    _cg.interactable = false;
+                    _cg.blocksRaycasts = false;
+                }
 
+                EnsureText();
                 // Always reset to defaults first (panels are pooled, so we must not "leak" prior overrides).
                 _overrideTextSize = textSize;
                 _overrideTextColor = textColor;
@@ -1010,37 +1713,98 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 _bg.color = _overridePanelColor ?? UConfig.PanelColor;
 
                 // Dialogue padding + readable line spacing.
-                _text.rectTransform.offsetMin = new Vector2(UConfig.DialoguePaddingX, UConfig.DialoguePaddingY);
-                _text.rectTransform.offsetMax = new Vector2(-UConfig.DialoguePaddingX, -UConfig.DialoguePaddingY);
+                _text.rectTransform.offsetMin = new Vector2(
+                    UConfig.DialoguePaddingX,
+                    UConfig.DialoguePaddingY
+                );
+                _text.rectTransform.offsetMax = new Vector2(
+                    -UConfig.DialoguePaddingX,
+                    -UConfig.DialoguePaddingTop
+                );
                 _text.lineSpacing = UConfig.DialogueLineSpacing;
 
                 // Reset typography to config defaults, then apply per-call overrides.
                 _text.font = _sys.ResolveFont();
                 _text.fontSize = UConfig.DialogueFontSize;
                 _text.color = UConfig.TextColor;
-                _text.alignment = U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left);
+                _text.alignment = TextAlignmentOptions.TopLeft;
+                _text.verticalAlignment = VerticalAlignmentOptions.Top;
 
-                if (_overrideTextSize.HasValue) _text.fontSize = _overrideTextSize.Value;
-                if (_overrideTextColor.HasValue) _text.color = _overrideTextColor.Value;
-                if (_overrideTextAlign.HasValue) _text.alignment = _overrideTextAlign.Value;
+                // Keep horizontal alignment consistent with placement unless explicitly overridden.
+                if (_overrideTextAlign == null)
+                {
+                    _text.horizontalAlignment = placement switch
+                    {
+                        Placements.TopRight or Placements.MiddleRight or Placements.BottomRight =>
+                            HorizontalAlignmentOptions.Right,
+                        Placements.TopCenter
+                        or Placements.MiddleCenter
+                        or Placements.BottomCenter => HorizontalAlignmentOptions.Center,
+                        _ => HorizontalAlignmentOptions.Left,
+                    };
+                }
+
+                if (_overrideTextSize.HasValue)
+                    _text.fontSize = _overrideTextSize.Value;
+                if (_overrideTextColor.HasValue)
+                    _text.color = _overrideTextColor.Value;
+                if (_overrideTextAlign.HasValue)
+                    _text.alignment = _overrideTextAlign.Value;
 
                 _text.text = text;
 
-                ApplyPlacement(placement, widthPct: size switch { Sizes.Inline => 0.5f, Sizes.FullWidth => 1f, Sizes.Modal => UConfig.ModalWidthPct, _ => 1f }, heightPct: UConfig.DialogueHeightPct);
+                ApplyPlacement(
+                    placement,
+                    widthPct: size switch
+                    {
+                        Sizes.Inline => 0.5f,
+                        Sizes.FullWidth => 1f,
+                        Sizes.Modal => UConfig.ModalWidthPct,
+                        _ => 1f,
+                    },
+                    heightPct: UConfig.DialogueHeightPct
+                );
 
                 EnsurePage();
                 _page.text = pageCount > 1 ? $"{pageIndex}/{pageCount}" : "";
                 ClearChoice();
             }
 
-            public void ConfigureChoice(string prompt, string[] options, Placements placement, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor)
+            public void ConfigureChoice(
+                string prompt,
+                string[] options,
+                Placements placement,
+                int? textSize,
+                Color? textColor,
+                TextAlignmentOptions? textAlign,
+                Color? panelColor
+            )
             {
                 var opts = new Option[options.Length];
-                for (int i = 0; i < options.Length; i++) opts[i] = new Option(PreprocessMarkupInline(options[i]));
-                ConfigureChoice(prompt, opts, placement, null, textSize, textColor, textAlign, panelColor);
+                for (int i = 0; i < options.Length; i++)
+                    opts[i] = new Option(PreprocessMarkupInline(options[i]));
+                ConfigureChoice(
+                    prompt,
+                    opts,
+                    placement,
+                    null,
+                    textSize,
+                    textColor,
+                    textAlign,
+                    panelColor
+                );
             }
 
-            public void ConfigureChoice(string prompt, Option[] options, Placements placement, Func<string, string> description, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor)
+            public void ConfigureChoice(
+                string prompt,
+                Option[] options,
+                Placements placement,
+                Func<string, string> description,
+                int? textSize,
+                Color? textColor,
+                TextAlignmentOptions? textAlign,
+                Color? panelColor
+            )
             {
                 _go.name = "U_Choice";
                 _go.SetActive(true);
@@ -1056,26 +1820,48 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 _title.font = _sys.ResolveFont();
                 _title.fontSize = UConfig.ChoiceFontSize;
                 _title.color = UConfig.TextColor;
-                _title.alignment = U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left);
-
+                _title.alignment = U.AlignmentForPlacement(
+                    placement,
+                    fallback: TextAlignmentOptions.Left
+                );
 
                 BuildChoiceRows(options);
                 _title.text = prompt ?? "Choose";
-                if (_overrideTextSize.HasValue) _title.fontSize = _overrideTextSize.Value;
-                if (_overrideTextColor.HasValue) _title.color = _overrideTextColor.Value;
-                _title.alignment = _overrideTextAlign ?? U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left);
+                if (_overrideTextSize.HasValue)
+                    _title.fontSize = _overrideTextSize.Value;
+                if (_overrideTextColor.HasValue)
+                    _title.color = _overrideTextColor.Value;
+                _title.alignment =
+                    _overrideTextAlign
+                    ?? U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left);
 
                 _descFn = description;
-                if (_descFn != null) EnsureDesc(); else ClearDesc();
+                if (_descFn != null)
+                    EnsureDesc();
+                else
+                    ClearDesc();
 
-                ApplyPlacement(placement, widthPct: UConfig.ModalWidthPct, heightPct: UConfig.ModalHeightPct);
+                ApplyPlacement(
+                    placement,
+                    widthPct: UConfig.ModalWidthPct,
+                    heightPct: UConfig.ModalHeightPct
+                );
                 ClearPage();
                 UpdateDesc();
             }
 
-
             // Options-only choice panel (used by PopChoice, where prompt is a separate dialogue/banner).
-            public void ConfigureChoiceOptionsOnly(Option[] options, Placements placement, Func<string, string> description, int? textSize, Color? textColor, TextAlignmentOptions? textAlign, Color? panelColor)
+            public void ConfigureChoiceOptionsOnly(
+                Option[] options,
+                Placements placement,
+                Func<string, string> description,
+                int? textSize,
+                Color? textColor,
+                TextAlignmentOptions? textAlign,
+                Color? panelColor,
+                int? borderSize,
+                Color? borderColor
+            )
             {
                 _go.name = "U_ChoiceOptions";
                 _go.SetActive(true);
@@ -1091,7 +1877,10 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
 
                 // Panel base look
                 _overridePanelColor = panelColor;
+                _overrideBorderSize = borderSize;
+                _overrideBorderColor = borderColor;
                 _bg.color = _overridePanelColor ?? UConfig.PanelColor;
+                EnsureBorder();
 
                 // Build options WITHOUT a title, and fit to content.
                 BuildChoiceRowsOptionsOnly(options ?? Array.Empty<Option>());
@@ -1100,12 +1889,17 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                 FitToChoiceContent(maxWidthPct: 0.9f);
 
                 // We'll position relative to another panel (AlignBelowRightOf), so for now just center-ish.
-                ApplyPlacement(placement, widthPct: _rt.rect.width / Mathf.Max(1f, _sys.CanvasSize.x), heightPct: _rt.rect.height / Mathf.Max(1f, _sys.CanvasSize.y));
+                ApplyPlacement(
+                    placement,
+                    widthPct: _rt.rect.width / Mathf.Max(1f, _sys.CanvasSize.x),
+                    heightPct: _rt.rect.height / Mathf.Max(1f, _sys.CanvasSize.y)
+                );
             }
 
             public void AlignBelowRightOf(UIPanel other, float gapPx)
             {
-                if (other == null) return;
+                if (other == null)
+                    return;
 
                 var corners = new Vector3[4];
                 other._rt.GetWorldCorners(corners);
@@ -1123,15 +1917,21 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
             private void BuildChoiceRowsOptionsOnly(Option[] options)
             {
                 // Clear existing rows/title (and any prior desc).
-                foreach (var r in _rows) r.Destroy();
+                foreach (var r in _rows)
+                    r.Destroy();
                 _rows.Clear();
-                if (_title != null) { UnityEngine.Object.Destroy(_title.gameObject); _title = null; }
+                if (_title != null)
+                {
+                    UnityEngine.Object.Destroy(_title.gameObject);
+                    _title = null;
+                }
 
                 // Remove old Options container(s) if they exist (best-effort cleanup).
                 for (int i = _go.transform.childCount - 1; i >= 0; i--)
                 {
                     var child = _go.transform.GetChild(i);
-                    if (child != null && child.name == "Options") UnityEngine.Object.Destroy(child.gameObject);
+                    if (child != null && child.name == "Options")
+                        UnityEngine.Object.Destroy(child.gameObject);
                 }
 
                 var content = UISystem.CreateRect("Options", _go.transform);
@@ -1177,22 +1977,28 @@ private static List<string> PaginateDialogue(string text, Sizes size, int? textS
                     labelRt.offsetMin = new Vector2(iconImg != null ? 48 : 12, 6);
                     labelRt.offsetMax = new Vector2(-12, -6);
 
-                    var label = UISystem.AddTMP(labelRt.gameObject, _sys.ResolveFont(), _overrideTextSize ?? UConfig.ChoiceFontSize, _overrideTextColor ?? UConfig.TextColor, _overrideTextAlign ?? TextAlignmentOptions.Left);
+                    var label = UISystem.AddTMP(
+                        labelRt.gameObject,
+                        _sys.ResolveFont(),
+                        _overrideTextSize ?? UConfig.ChoiceFontSize,
+                        _overrideTextColor ?? UConfig.TextColor,
+                        _overrideTextAlign ?? TextAlignmentOptions.Left
+                    );
                     label.text = options[i].Label;
                     label.textWrappingMode = TextWrappingModes.NoWrap;
                     label.overflowMode = TextOverflowModes.Overflow;
                     label.lineSpacing = UConfig.ChoiceLineSpacing;
 
-                // Ensure the row is tall enough for the current font, so labels don't overlap.
-                // Ensure the row is tall enough for the current font, so labels don't overlap.
-label.ForceMeshUpdate();
-int fs = _overrideTextSize ?? UConfig.ChoiceFontSize;
-int rowH = Mathf.CeilToInt(Mathf.Max(label.preferredHeight, fs * 1.2f) + 20f);
-rt.sizeDelta = new Vector2(rt.sizeDelta.x, rowH);
-var le = rowGo.AddComponent<LayoutElement>();
-le.minHeight = rowH;
-le.preferredHeight = rowH;
-_rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
+                    // Ensure the row is tall enough for the current font, so labels don't overlap.
+                    // Ensure the row is tall enough for the current font, so labels don't overlap.
+                    label.ForceMeshUpdate();
+                    int fs = _overrideTextSize ?? UConfig.ChoiceFontSize;
+                    int rowH = Mathf.CeilToInt(Mathf.Max(label.preferredHeight, fs * 1.2f) + 20f);
+                    rt.sizeDelta = new Vector2(rt.sizeDelta.x, rowH);
+                    var le = rowGo.AddComponent<LayoutElement>();
+                    le.minHeight = rowH;
+                    le.preferredHeight = rowH;
+                    _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 }
 
                 _selected = 0;
@@ -1201,13 +2007,15 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             private void FitToChoiceContent(float maxWidthPct)
             {
-                if (_rows.Count == 0) return;
+                if (_rows.Count == 0)
+                    return;
 
                 float maxW = 0f;
                 for (int i = 0; i < _rows.Count; i++)
                 {
                     var t = _rows[i].LabelText;
-                    if (t == null) continue;
+                    if (t == null)
+                        continue;
                     var pref = t.GetPreferredValues(t.text, 0, 0);
                     maxW = Mathf.Max(maxW, pref.x);
                 }
@@ -1215,7 +2023,10 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 // icon(0 or 28) + paddings
                 float iconW = 28f;
                 float padX = 18f + 18f + 12f + 12f; // content + label paddings (rough)
-                float w = Mathf.Min(_sys.CanvasSize.x * Mathf.Clamp01(maxWidthPct), maxW + iconW + padX);
+                float w = Mathf.Min(
+                    _sys.CanvasSize.x * Mathf.Clamp01(maxWidthPct),
+                    maxW + iconW + padX
+                );
 
                 float gap = Mathf.Max(UConfig.ChoiceSpacingPx, 18);
                 float rowsH = 0f;
@@ -1234,10 +2045,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
             {
                 while (true)
                 {
-                    if (ct.IsCancellationRequested) return new Result<bool>(false, true);
+                    if (ct.IsCancellationRequested)
+                        return new Result<bool>(false, true);
 
-                    if (InputConfirm()) return new Result<bool>(true, false);
-                    if (InputCancel()) return new Result<bool>(false, true);
+                    if (InputConfirm())
+                        return new Result<bool>(true, false);
+                    if (InputCancel())
+                        return new Result<bool>(false, true);
 
                     await Awaitable.NextFrameAsync(ct);
                 }
@@ -1251,7 +2065,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
                 while (true)
                 {
-                    if (ct.IsCancellationRequested) return Result<string>.Canceled();
+                    if (ct.IsCancellationRequested)
+                        return Result<string>.Canceled();
 
                     if (_rows.Count > 0)
                     {
@@ -1271,7 +2086,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
                     if (InputConfirm())
                     {
-                        if (_rows.Count == 0) return Result<string>.Canceled();
+                        if (_rows.Count == 0)
+                            return Result<string>.Canceled();
                         var value = _rows[_selected].Label;
                         return Result<string>.Ok(value);
                     }
@@ -1305,7 +2121,7 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     Placements.BottomLeft => new Vector2(0, 0),
                     Placements.BottomCenter => new Vector2(0.5f, 0),
                     Placements.BottomRight => new Vector2(1, 0),
-                    _ => new Vector2(0.5f, 0.5f)
+                    _ => new Vector2(0.5f, 0.5f),
                 };
 
                 _rt.anchorMin = anchor;
@@ -1315,18 +2131,18 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 float pad = UConfig.DisplayMarginPx;
                 Vector2 offset = anchor switch
                 {
-                    var a when a == new Vector2(0,1) => new Vector2(pad, -pad),
-                    var a when a == new Vector2(0.5f,1) => new Vector2(0, -pad),
-                    var a when a == new Vector2(1,1) => new Vector2(-pad, -pad),
+                    var a when a == new Vector2(0, 1) => new Vector2(pad, -pad),
+                    var a when a == new Vector2(0.5f, 1) => new Vector2(0, -pad),
+                    var a when a == new Vector2(1, 1) => new Vector2(-pad, -pad),
 
-                    var a when a == new Vector2(0,0.5f) => new Vector2(pad, 0),
-                    var a when a == new Vector2(0.5f,0.5f) => Vector2.zero,
-                    var a when a == new Vector2(1,0.5f) => new Vector2(-pad, 0),
+                    var a when a == new Vector2(0, 0.5f) => new Vector2(pad, 0),
+                    var a when a == new Vector2(0.5f, 0.5f) => Vector2.zero,
+                    var a when a == new Vector2(1, 0.5f) => new Vector2(-pad, 0),
 
-                    var a when a == new Vector2(0,0) => new Vector2(pad, pad),
-                    var a when a == new Vector2(0.5f,0) => new Vector2(0, pad),
-                    var a when a == new Vector2(1,0) => new Vector2(-pad, pad),
-                    _ => Vector2.zero
+                    var a when a == new Vector2(0, 0) => new Vector2(pad, pad),
+                    var a when a == new Vector2(0.5f, 0) => new Vector2(0, pad),
+                    var a when a == new Vector2(1, 0) => new Vector2(-pad, pad),
+                    _ => Vector2.zero,
                 };
 
                 _rt.anchoredPosition = offset;
@@ -1334,7 +2150,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             private void EnsureBorder()
             {
-                if (_borderTop != null) return;
+                if (_borderTop != null)
+                    return;
 
                 _borderTop = MakeBorderSide("U_Border_Top");
                 _borderBottom = MakeBorderSide("U_Border_Bottom");
@@ -1358,23 +2175,55 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
             private void LayoutBorder()
             {
                 int px = _overrideBorderSize ?? UConfig.BorderSize;
-                if (px < 0) px = 0;
+                if (px < 0)
+                    px = 0;
 
                 // Top
-                SetupSide(_borderTop.rectTransform, anchorMin: new Vector2(0, 1), anchorMax: new Vector2(1, 1), pivot: new Vector2(0.5f, 1),
-                    offsetMin: new Vector2(0, -px), offsetMax: new Vector2(0, 0));
+                SetupSide(
+                    _borderTop.rectTransform,
+                    anchorMin: new Vector2(0, 1),
+                    anchorMax: new Vector2(1, 1),
+                    pivot: new Vector2(0.5f, 1),
+                    offsetMin: new Vector2(0, -px),
+                    offsetMax: new Vector2(0, 0)
+                );
                 // Bottom
-                SetupSide(_borderBottom.rectTransform, anchorMin: new Vector2(0, 0), anchorMax: new Vector2(1, 0), pivot: new Vector2(0.5f, 0),
-                    offsetMin: new Vector2(0, 0), offsetMax: new Vector2(0, px));
+                SetupSide(
+                    _borderBottom.rectTransform,
+                    anchorMin: new Vector2(0, 0),
+                    anchorMax: new Vector2(1, 0),
+                    pivot: new Vector2(0.5f, 0),
+                    offsetMin: new Vector2(0, 0),
+                    offsetMax: new Vector2(0, px)
+                );
                 // Left
-                SetupSide(_borderLeft.rectTransform, anchorMin: new Vector2(0, 0), anchorMax: new Vector2(0, 1), pivot: new Vector2(0, 0.5f),
-                    offsetMin: new Vector2(0, 0), offsetMax: new Vector2(px, 0));
+                SetupSide(
+                    _borderLeft.rectTransform,
+                    anchorMin: new Vector2(0, 0),
+                    anchorMax: new Vector2(0, 1),
+                    pivot: new Vector2(0, 0.5f),
+                    offsetMin: new Vector2(0, 0),
+                    offsetMax: new Vector2(px, 0)
+                );
                 // Right
-                SetupSide(_borderRight.rectTransform, anchorMin: new Vector2(1, 0), anchorMax: new Vector2(1, 1), pivot: new Vector2(1, 0.5f),
-                    offsetMin: new Vector2(-px, 0), offsetMax: new Vector2(0, 0));
+                SetupSide(
+                    _borderRight.rectTransform,
+                    anchorMin: new Vector2(1, 0),
+                    anchorMax: new Vector2(1, 1),
+                    pivot: new Vector2(1, 0.5f),
+                    offsetMin: new Vector2(-px, 0),
+                    offsetMax: new Vector2(0, 0)
+                );
             }
 
-            private static void SetupSide(RectTransform rt, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 offsetMin, Vector2 offsetMax)
+            private static void SetupSide(
+                RectTransform rt,
+                Vector2 anchorMin,
+                Vector2 anchorMax,
+                Vector2 pivot,
+                Vector2 offsetMin,
+                Vector2 offsetMax
+            )
             {
                 rt.anchorMin = anchorMin;
                 rt.anchorMax = anchorMax;
@@ -1414,7 +2263,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             public async Awaitable FadeIn(CancellationToken ct)
             {
-                if (!UConfig.PopFadeIn) { _cg.alpha = 1f; _cg.interactable = true; _cg.blocksRaycasts = true; return; }
+                if (!UConfig.PopFadeIn)
+                {
+                    _cg.alpha = 1f;
+                    _cg.interactable = true;
+                    _cg.blocksRaycasts = true;
+                    return;
+                }
                 float d = Mathf.Max(0.001f, UConfig.PopFadeDuration);
                 _cg.alpha = 0f;
                 _cg.interactable = false;
@@ -1433,7 +2288,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             public async Awaitable FadeOut(CancellationToken ct)
             {
-                if (!UConfig.PopFadeOut) { _cg.alpha = 0f; _cg.interactable = false; _cg.blocksRaycasts = false; return; }
+                if (!UConfig.PopFadeOut)
+                {
+                    _cg.alpha = 0f;
+                    _cg.interactable = false;
+                    _cg.blocksRaycasts = false;
+                    return;
+                }
                 float d = Mathf.Max(0.001f, UConfig.PopFadeDuration);
                 _cg.interactable = false;
                 _cg.blocksRaycasts = false;
@@ -1447,30 +2308,55 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 _cg.alpha = 0f;
             }
 
+            /// <summary>
+            /// Makes the panel invisible and non-interactive, but keeps its layout/RectTransform usable.
+            /// Useful as an invisible anchor when we want consistent option placement without showing a prompt.
+            /// </summary>
+            public void HideForLayout()
+            {
+                _cg.alpha = 0f;
+                _cg.interactable = false;
+                _cg.blocksRaycasts = false;
+            }
+
             private void EnsureText()
             {
-                if (_text != null) return;
+                if (_text != null)
+                    return;
 
                 var font = _sys.ResolveFont();
 
                 var textGo = UISystem.CreateRect("Text", _go.transform);
                 textGo.anchorMin = new Vector2(0, 0);
                 textGo.anchorMax = new Vector2(1, 1);
+                textGo.pivot = new Vector2(0f, 1f);
                 textGo.offsetMin = new Vector2(18, 14);
                 textGo.offsetMax = new Vector2(-18, -14);
 
-                _text = UISystem.AddTMP(textGo.gameObject, font, UConfig.BodyFontSize , UConfig.TextColor, TextAlignmentOptions.Center);
+                _text = UISystem.AddTMP(
+                    textGo.gameObject,
+                    font,
+                    UConfig.BodyFontSize,
+                    UConfig.TextColor,
+                    TextAlignmentOptions.TopLeft
+                );
+                // Force vertical alignment to TOP (TMP can otherwise retain previous alignment when reused).
+                _text.verticalAlignment = VerticalAlignmentOptions.Top;
+                _text.horizontalAlignment = HorizontalAlignmentOptions.Left;
+                _text.alignment = TextAlignmentOptions.TopLeft;
             }
 
             private void ClearText()
             {
-                if (_text != null) UnityEngine.Object.Destroy(_text.gameObject);
+                if (_text != null)
+                    UnityEngine.Object.Destroy(_text.gameObject);
                 _text = null;
             }
 
             private void EnsureTitle()
             {
-                if (_title != null) return;
+                if (_title != null)
+                    return;
 
                 var font = _sys.ResolveFont();
 
@@ -1481,7 +2367,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 titleGo.offsetMin = new Vector2(18, -52);
                 titleGo.offsetMax = new Vector2(-18, -12);
 
-                _title = UISystem.AddTMP(titleGo.gameObject, font, UConfig.TitleFontSize, UConfig.TextColor, TextAlignmentOptions.Left);
+                _title = UISystem.AddTMP(
+                    titleGo.gameObject,
+                    font,
+                    UConfig.TitleFontSize,
+                    UConfig.TextColor,
+                    TextAlignmentOptions.Left
+                );
             }
 
             private void ClearChoice()
@@ -1490,7 +2382,11 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     r.Destroy();
                 _rows.Clear();
 
-                if (_title != null) { UnityEngine.Object.Destroy(_title.gameObject); _title = null; }
+                if (_title != null)
+                {
+                    UnityEngine.Object.Destroy(_title.gameObject);
+                    _title = null;
+                }
             }
 
             private void BuildChoiceRows(Option[] options)
@@ -1519,7 +2415,7 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     rt.sizeDelta = new Vector2(0, 40);
 
                     var bg = rowGo.AddComponent<Image>();
-                    bg.color = new Color(1,1,1,0f);
+                    bg.color = new Color(1, 1, 1, 0f);
 
                     // Optional icon
                     Image iconImg = null;
@@ -1536,14 +2432,19 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                         iconImg.preserveAspect = true;
                     }
 
-
                     var labelRt = UISystem.CreateRect("Label", rowGo.transform);
                     labelRt.anchorMin = new Vector2(0, 0);
                     labelRt.anchorMax = new Vector2(1, 1);
-                     labelRt.offsetMin = new Vector2(iconImg != null ? 48 : 12, 6);
+                    labelRt.offsetMin = new Vector2(iconImg != null ? 48 : 12, 6);
                     labelRt.offsetMax = new Vector2(-12, -6);
 
-                    var label = UISystem.AddTMP(labelRt.gameObject, _sys.ResolveFont(), _overrideTextSize ?? UConfig.ChoiceFontSize, _overrideTextColor ?? UConfig.TextColor, _overrideTextAlign ?? TextAlignmentOptions.Left);
+                    var label = UISystem.AddTMP(
+                        labelRt.gameObject,
+                        _sys.ResolveFont(),
+                        _overrideTextSize ?? UConfig.ChoiceFontSize,
+                        _overrideTextColor ?? UConfig.TextColor,
+                        _overrideTextAlign ?? TextAlignmentOptions.Left
+                    );
                     label.text = options[i].Label;
                     label.textWrappingMode = TextWrappingModes.NoWrap;
                     label.overflowMode = TextOverflowModes.Overflow;
@@ -1563,10 +2464,24 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     _rows[i].SetSelected(i == _selected);
             }
 
+            public string GetSelectedLabel()
+            {
+                if (_rows == null || _rows.Count == 0)
+                    return "";
+                _selected = Mathf.Clamp(_selected, 0, _rows.Count - 1);
+                return _rows[_selected].Label;
+            }
+
+            public void SetText(string text)
+            {
+                EnsureText();
+                _text.text = text ?? "";
+            }
 
             private void EnsureDesc()
             {
-                if (_desc != null) return;
+                if (_desc != null)
+                    return;
 
                 var font = _sys.ResolveFont();
 
@@ -1587,7 +2502,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 textRt.offsetMin = new Vector2(10, 6);
                 textRt.offsetMax = new Vector2(-10, -6);
 
-                _desc = UISystem.AddTMP(textRt.gameObject, font, UConfig.DescFontSize , new Color(1,1,1,0.85f), TextAlignmentOptions.Left);
+                _desc = UISystem.AddTMP(
+                    textRt.gameObject,
+                    font,
+                    UConfig.DescFontSize,
+                    new Color(1, 1, 1, 0.85f),
+                    TextAlignmentOptions.Left
+                );
             }
 
             private void ClearDesc()
@@ -1602,17 +2523,26 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             private void UpdateDesc()
             {
-                if (_desc == null || _descFn == null || _rows.Count == 0) return;
+                if (_desc == null || _descFn == null || _rows.Count == 0)
+                    return;
                 var label = _rows[Mathf.Clamp(_selected, 0, _rows.Count - 1)].Label;
                 string d = null;
-                try { d = _descFn(label); } catch { d = null; }
+                try
+                {
+                    d = _descFn(label);
+                }
+                catch
+                {
+                    d = null;
+                }
 
                 _desc.text = string.IsNullOrEmpty(d) ? "" : d;
             }
 
             private void EnsurePage()
             {
-                if (_page != null) return;
+                if (_page != null)
+                    return;
 
                 var font = _sys.ResolveFont();
 
@@ -1623,22 +2553,37 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 pageGo.anchoredPosition = new Vector2(-12, 10);
                 pageGo.sizeDelta = new Vector2(120, 30);
 
-                _page = UISystem.AddTMP(pageGo.gameObject, font, UConfig.PageFontSize , new Color(1,1,1,0.7f), TextAlignmentOptions.Right);
+                _page = UISystem.AddTMP(
+                    pageGo.gameObject,
+                    font,
+                    UConfig.PageFontSize,
+                    new Color(1, 1, 1, 0.7f),
+                    TextAlignmentOptions.Right
+                );
             }
 
             private void ClearPage()
             {
-                if (_page != null) { UnityEngine.Object.Destroy(_page.gameObject); _page = null; }
+                if (_page != null)
+                {
+                    UnityEngine.Object.Destroy(_page.gameObject);
+                    _page = null;
+                }
             }
 
             private static bool InputConfirm()
             {
-                if (I.GetMouseButtonDown(0)) return true;
+                if (I.GetMouseButtonDown(0))
+                    return true;
 
                 foreach (var k in UConfig.ConfirmKeys)
-                    if (I.GetKeyDown(k)) return true;
+                    if (I.GetKeyDown(k))
+                        return true;
 
-                if (!string.IsNullOrEmpty(UConfig.ConfirmButtonName) && I.GetButtonDown(UConfig.ConfirmButtonName))
+                if (
+                    !string.IsNullOrEmpty(UConfig.ConfirmButtonName)
+                    && I.GetButtonDown(UConfig.ConfirmButtonName)
+                )
                     return true;
 
                 return false;
@@ -1646,12 +2591,17 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             private static bool InputCancel()
             {
-                if (I.GetMouseButtonDown(1)) return true;
+                if (I.GetMouseButtonDown(1))
+                    return true;
 
                 foreach (var k in UConfig.CancelKeys)
-                    if (I.GetKeyDown(k)) return true;
+                    if (I.GetKeyDown(k))
+                        return true;
 
-                if (!string.IsNullOrEmpty(UConfig.CancelButtonName) && I.GetButtonDown(UConfig.CancelButtonName))
+                if (
+                    !string.IsNullOrEmpty(UConfig.CancelButtonName)
+                    && I.GetButtonDown(UConfig.CancelButtonName)
+                )
                     return true;
 
                 return false;
@@ -1660,14 +2610,16 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
             private static bool InputUp()
             {
                 foreach (var k in UConfig.UpKeys)
-                    if (I.GetKeyDown(k)) return true;
+                    if (I.GetKeyDown(k))
+                        return true;
                 return false;
             }
 
             private static bool InputDown()
             {
                 foreach (var k in UConfig.DownKeys)
-                    if (I.GetKeyDown(k)) return true;
+                    if (I.GetKeyDown(k))
+                        return true;
                 return false;
             }
 
@@ -1679,7 +2631,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 public readonly TMP_Text LabelText;
                 public readonly string Label;
 
-                public ChoiceRow(GameObject go, Image bg, Image icon, TMP_Text labelText, string label)
+                public ChoiceRow(
+                    GameObject go,
+                    Image bg,
+                    Image icon,
+                    TMP_Text labelText,
+                    string label
+                )
                 {
                     Go = go;
                     Bg = bg;
@@ -1690,13 +2648,16 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
                 public void SetSelected(bool selected)
                 {
-                    if (Bg != null) Bg.color = selected ? UConfig.SelectedColor : new Color(1,1,1,0f);
-                    if (LabelText != null) LabelText.color = selected ? UConfig.SelectedTextColor : UConfig.TextColor;
-}
+                    if (Bg != null)
+                        Bg.color = selected ? UConfig.SelectedColor : new Color(1, 1, 1, 0f);
+                    if (LabelText != null)
+                        LabelText.color = selected ? UConfig.SelectedTextColor : UConfig.TextColor;
+                }
 
                 public void Destroy()
                 {
-                    if (Go != null) UnityEngine.Object.Destroy(Go);
+                    if (Go != null)
+                        UnityEngine.Object.Destroy(Go);
                 }
             }
         }
@@ -1704,7 +2665,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
         private sealed class PanelPool
         {
             private readonly UISystem _sys;
-            private readonly Dictionary<PopupKind, Stack<UIPanel>> _p = new Dictionary<PopupKind, Stack<UIPanel>>();
+            private readonly Dictionary<PopupKind, Stack<UIPanel>> _p =
+                new Dictionary<PopupKind, Stack<UIPanel>>();
 
             public PanelPool(UISystem sys)
             {
@@ -1717,7 +2679,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
             public UIPanel GetOrCreate(PopupKind kind)
             {
                 var st = _p[kind];
-                if (st.Count > 0) return st.Pop();
+                if (st.Count > 0)
+                    return st.Pop();
                 return new UIPanel(_sys);
             }
 
@@ -1730,7 +2693,9 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
         private sealed class PanelStack
         {
             private readonly Stack<UIPanel> _s = new Stack<UIPanel>();
+
             public void Push(UIPanel p) => _s.Push(p);
+
             public UIPanel Pop() => _s.Pop();
         }
 
@@ -1745,10 +2710,19 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
         {
             private readonly UISystem _sys;
 
-            public DisplaySystem(UISystem sys) { _sys = sys; }
+            public DisplaySystem(UISystem sys)
+            {
+                _sys = sys;
+            }
 
-            public IDisplayHandle Create(Func<string> text, Placements placement, Sizes size, Color bg, Color fg, int paddingPx)
-                => new DisplayHandle(_sys, text, placement, size, bg, fg, paddingPx);
+            public IDisplayHandle Create(
+                Func<string> text,
+                Placements placement,
+                Sizes size,
+                Color bg,
+                Color fg,
+                int paddingPx
+            ) => new DisplayHandle(_sys, text, placement, size, bg, fg, paddingPx);
 
             private sealed class DisplayHandle : IDisplayHandle
             {
@@ -1761,7 +2735,15 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 private bool _visible = true;
                 private float _nextTick;
 
-                public DisplayHandle(UISystem sys, Func<string> source, Placements placement, Sizes size, Color bg, Color fg, int paddingPx)
+                public DisplayHandle(
+                    UISystem sys,
+                    Func<string> source,
+                    Placements placement,
+                    Sizes size,
+                    Color bg,
+                    Color fg,
+                    int paddingPx
+                )
                 {
                     _source = source ?? (() => "");
                     _sys = sys;
@@ -1781,7 +2763,13 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     textRt.offsetMin = new Vector2(paddingPx, paddingPx);
                     textRt.offsetMax = new Vector2(-paddingPx, -paddingPx);
 
-                    _text = UISystem.AddTMP(textRt.gameObject, sys.ResolveFont(), UConfig.BodyFontSize, fg, U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left));
+                    _text = UISystem.AddTMP(
+                        textRt.gameObject,
+                        sys.ResolveFont(),
+                        UConfig.BodyFontSize,
+                        fg,
+                        U.AlignmentForPlacement(placement, fallback: TextAlignmentOptions.Left)
+                    );
                     _text.richText = true;
                     _text.textWrappingMode = TextWrappingModes.Normal;
                     _text.lineSpacing = UConfig.DisplayLineSpacing;
@@ -1815,29 +2803,37 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                 public void Dispose()
                 {
                     URunner.OnUpdate -= Update;
-                    if (_go != null) UnityEngine.Object.Destroy(_go);
+                    if (_go != null)
+                        UnityEngine.Object.Destroy(_go);
                 }
 
                 private void Update()
                 {
-                    if (!_visible) return;
-                    if (Time.unscaledTime < _nextTick) return;
+                    if (!_visible)
+                        return;
+                    if (Time.unscaledTime < _nextTick)
+                        return;
                     _nextTick = Time.unscaledTime + 0.1f;
                     Tick(false);
                 }
 
-                                private void Tick(bool force)
+                private void Tick(bool force)
                 {
                     string raw;
-                    try { raw = _source(); }
-                    catch { raw = "ERR"; }
+                    try
+                    {
+                        raw = _source();
+                    }
+                    catch
+                    {
+                        raw = "ERR";
+                    }
 
                     var s = U.PreprocessMarkup(raw, allowPageBreaks: false);
 
                     if (force || _text.text != s)
                         _text.text = s;
                 }
-
 
                 private void ApplyPlacement(Placements placement, Sizes size)
                 {
@@ -1850,7 +2846,11 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     float innerW = Mathf.Max(0f, w - (UConfig.DisplayPaddingPx * 2f));
                     string preview = _source != null ? (_source() ?? "") : "";
                     var pref = _text.GetPreferredValues(preview, innerW, 0);
-                    float h = Mathf.Clamp(pref.y + (UConfig.DisplayPaddingPx * 2f), 24f, _sys.CanvasSize.y * 0.3f);
+                    float h = Mathf.Clamp(
+                        pref.y + (UConfig.DisplayPaddingPx * 2f),
+                        24f,
+                        _sys.CanvasSize.y * 0.3f
+                    );
 
                     _rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
                     _rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
@@ -1868,9 +2868,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                         Placements.BottomLeft => new Vector2(0, 0),
                         Placements.BottomCenter => new Vector2(0.5f, 0),
                         Placements.BottomRight => new Vector2(1, 0),
-                        _ => new Vector2(0, 1)
+                        _ => new Vector2(0, 1),
                     };
-
 
                     _rt.anchorMin = anchor;
                     _rt.anchorMax = anchor;
@@ -1879,18 +2878,18 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
                     float pad = UConfig.DisplayMarginPx;
                     Vector2 offset = anchor switch
                     {
-                        var a when a == new Vector2(0,1) => new Vector2(pad, -pad),
-                        var a when a == new Vector2(0.5f,1) => new Vector2(0, -pad),
-                        var a when a == new Vector2(1,1) => new Vector2(-pad, -pad),
+                        var a when a == new Vector2(0, 1) => new Vector2(pad, -pad),
+                        var a when a == new Vector2(0.5f, 1) => new Vector2(0, -pad),
+                        var a when a == new Vector2(1, 1) => new Vector2(-pad, -pad),
 
-                        var a when a == new Vector2(0,0.5f) => new Vector2(pad, 0),
-                        var a when a == new Vector2(0.5f,0.5f) => Vector2.zero,
-                        var a when a == new Vector2(1,0.5f) => new Vector2(-pad, 0),
+                        var a when a == new Vector2(0, 0.5f) => new Vector2(pad, 0),
+                        var a when a == new Vector2(0.5f, 0.5f) => Vector2.zero,
+                        var a when a == new Vector2(1, 0.5f) => new Vector2(-pad, 0),
 
-                        var a when a == new Vector2(0,0) => new Vector2(pad, pad),
-                        var a when a == new Vector2(0.5f,0) => new Vector2(0, pad),
-                        var a when a == new Vector2(1,0) => new Vector2(-pad, pad),
-                        _ => Vector2.zero
+                        var a when a == new Vector2(0, 0) => new Vector2(pad, pad),
+                        var a when a == new Vector2(0.5f, 0) => new Vector2(0, pad),
+                        var a when a == new Vector2(1, 0) => new Vector2(-pad, pad),
+                        _ => Vector2.zero,
                     };
 
                     _rt.anchoredPosition = offset;
@@ -1903,15 +2902,20 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
             private readonly int _max;
             private readonly List<string> _items = new List<string>();
 
-            public HistoryRing(int max) { _max = Mathf.Max(1, max); }
+            public HistoryRing(int max)
+            {
+                _max = Mathf.Max(1, max);
+            }
 
             public IReadOnlyList<string> Items => _items;
 
             public void Add(string s)
             {
-                if (string.IsNullOrEmpty(s)) return;
+                if (string.IsNullOrEmpty(s))
+                    return;
                 _items.Add(s);
-                if (_items.Count > _max) _items.RemoveAt(0);
+                if (_items.Count > _max)
+                    _items.RemoveAt(0);
             }
         }
 
@@ -1922,7 +2926,8 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             public static void Ensure()
             {
-                if (_inst != null) return;
+                if (_inst != null)
+                    return;
                 var go = new GameObject("U_Runner");
                 DontDestroyOnLoad(go);
                 _inst = go.AddComponent<URunner>();
@@ -1930,7 +2935,5 @@ _rows.Add(new ChoiceRow(rowGo, bg, iconImg, label, options[i].Label));
 
             private void Update() => OnUpdate?.Invoke();
         }
-
-
     }
 }

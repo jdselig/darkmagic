@@ -18,9 +18,9 @@ namespace DarkMagic
             EditorPrefs.SetBool(PrefKey, true);
 
             Debug.Log(
-                "<color=#FFD36E><b>📣 V Event Bus installed</b></color>\n" +
+                "<color=#FFD36E><b>📣V Event Bus installed</b></color>\n" +
                 "To get started fast:\n" +
-                "<b>Package Manager → V Event Bus → Samples → Import “VConfig”</b>\n" +
+                "<b>Package Manager → V Event Bus → Samples → Import “Config”</b>\n" +
                 "Then edit <b>VConfig.cs</b> to add events + toggle Trace."
             );
         }

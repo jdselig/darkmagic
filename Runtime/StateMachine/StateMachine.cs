@@ -17,18 +17,20 @@ namespace DarkMagic
         public static bool Trace = false;
         public static bool Warnings = true;
 
+        public static StateMachine Create(MonoBehaviour mb) => StateMachineRegistry.For(mb);
+
         private static bool WarningsAllowedNow =>
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
             true;
-    #else
+#else
             Debug.isDebugBuild;
-    #endif
+#endif
 
         private readonly WeakReference<UnityEngine.Object> _ownerRef;
 
         private Type _current;
-        private Type _lockedTo;   // when set, only this state can be entered
-        private bool _locked;     // when true, no transitions allowed (unless forced)
+        private Type _lockedTo; // when set, only this state can be entered
+        private bool _locked; // when true, no transitions allowed (unless forced)
 
         private readonly Dictionary<Type, List<Action>> _onEnter = new();
         private readonly Dictionary<Type, List<Action>> _onExit = new();
@@ -43,7 +45,8 @@ namespace DarkMagic
         {
             get
             {
-                if (_ownerRef.TryGetTarget(out var o)) return o;
+                if (_ownerRef.TryGetTarget(out var o))
+                    return o;
                 return null;
             }
         }
@@ -55,6 +58,7 @@ namespace DarkMagic
 
         // -------- Convenience aliases (student-friendly) --------
         public bool Go<TState>() => Enter<TState>();
+
         public bool In<TState>() => Is<TState>();
 
         // -------- State queries --------
@@ -71,7 +75,9 @@ namespace DarkMagic
         {
             if (_current != null)
             {
-                Warn($"StartIn<{typeof(TState).Name}> called but state is already {_current.Name}. Ignored.");
+                Warn(
+                    $"StartIn<{typeof(TState).Name}> called but state is already {_current.Name}. Ignored."
+                );
                 return false;
             }
             return Enter<TState>();
@@ -81,14 +87,16 @@ namespace DarkMagic
 
         public void OnChange(Action<Type, Type> handler)
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
             _onChange.Add(handler);
             Guardrail_SubscribeMaybeInUpdate();
         }
 
         public void OnEnter<TState>(Action handler)
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
             var t = typeof(TState);
             if (!_onEnter.TryGetValue(t, out var list))
             {
@@ -101,7 +109,8 @@ namespace DarkMagic
 
         public void OnExit<TState>(Action handler)
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
             var t = typeof(TState);
             if (!_onExit.TryGetValue(t, out var list))
             {
@@ -114,6 +123,7 @@ namespace DarkMagic
 
         // Aliases (optional sugar)
         public void When<TState>(Action handler) => OnEnter<TState>(handler);
+
         public void Unless<TState>(Action handler) => OnExit<TState>(handler);
 
         // -------- Locks --------
@@ -173,7 +183,8 @@ namespace DarkMagic
             if (_current == t)
             {
                 InvokeEnter(t);
-                if (Trace) Log($"Reenter {t.Name}");
+                if (Trace)
+                    Log($"Reenter {t.Name}");
                 return true;
             }
             return Enter(t, force: false, allowReenter: false);
@@ -195,14 +206,18 @@ namespace DarkMagic
 
                 if (_lockedTo != null && next != _lockedTo)
                 {
-                    Warn($"Transition blocked (LockTo<{_lockedTo.Name}>): {_current?.Name ?? "(none)"} -> {next.Name}");
+                    Warn(
+                        $"Transition blocked (LockTo<{_lockedTo.Name}>): {_current?.Name ?? "(none)"} -> {next.Name}"
+                    );
                     return false;
                 }
             }
 
             if (!allowReenter && _current == next)
             {
-                Warn($"Enter<{next.Name}> called while already in {next.Name}. No-op. Use Reenter<{next.Name}>() if you meant to retrigger.");
+                Warn(
+                    $"Enter<{next.Name}> called while already in {next.Name}. No-op. Use Reenter<{next.Name}>() if you meant to retrigger."
+                );
                 return false;
             }
 
@@ -221,7 +236,8 @@ namespace DarkMagic
 
             InvokeEnter(next);
 
-            if (Trace) Log($"{(from?.Name ?? "(none)")} -> {next.Name}");
+            if (Trace)
+                Log($"{(from?.Name ?? "(none)")} -> {next.Name}");
             return true;
         }
 
@@ -241,8 +257,14 @@ namespace DarkMagic
         {
             for (int i = 0; i < _onChange.Count; i++)
             {
-                try { _onChange[i]?.Invoke(from, to); }
-                catch (Exception ex) { Debug.LogException(ex); }
+                try
+                {
+                    _onChange[i]?.Invoke(from, to);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
         }
 
@@ -250,8 +272,14 @@ namespace DarkMagic
         {
             for (int i = 0; i < list.Count; i++)
             {
-                try { list[i]?.Invoke(); }
-                catch (Exception ex) { Debug.LogException(ex); }
+                try
+                {
+                    list[i]?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
         }
 
@@ -259,7 +287,8 @@ namespace DarkMagic
 
         private static void Warn(string msg)
         {
-            if (!Warnings || !WarningsAllowedNow) return;
+            if (!Warnings || !WarningsAllowedNow)
+                return;
             Debug.LogWarning($"[S] {msg}");
         }
 
@@ -268,7 +297,8 @@ namespace DarkMagic
 
         private void Guardrail_SubscribeMaybeInUpdate()
         {
-            if (!Warnings || !WarningsAllowedNow) return;
+            if (!Warnings || !WarningsAllowedNow)
+                return;
 
             int frame = Time.frameCount;
             if (_frame != frame)
@@ -278,34 +308,54 @@ namespace DarkMagic
             }
 
             _subsThisFrame++;
+
+            // Only warn if it looks like we're subscribing from Update/LateUpdate/FixedUpdate.
             if (_subsThisFrame == 6)
             {
-                Debug.LogWarning(
-                    $"[S] Many state subscriptions were added for {Owner?.name ?? "(owner)"} in a single frame.\n" +
-                    "Did you call S.OnEnter/OnExit/OnChange inside Update()? Subscribe once in Awake/Start/OnEnable."
-                );
+                var st = System.Environment.StackTrace;
+                bool looksLikeUpdate =
+                    st.Contains(".Update(") || st.Contains(".LateUpdate(") || st.Contains(".FixedUpdate(");
+
+                if (looksLikeUpdate)
+                {
+                    Warn($"Many state subscriptions were added for {Owner?.name ?? "(owner)"} in a single frame.\\n"
+                        + "It looks like you called S.OnEnter/OnExit/OnChange inside Update(). "
+                        + "Subscribe once in Awake/Start/OnEnable.");
+                }
             }
         }
 
         private void BroadcastChange(UnityEngine.Object owner, Type from, Type to)
         {
             // Global
-            V.Broadcast<V.StateChanged, V.StateChange>(new V.StateChange(owner, from, to, group: null));
+            V.Broadcast<V.StateChanged, V.StateChange>(
+                new V.StateChange(owner, from, to, group: null)
+            );
 
             // Group-specific: infer from declaring type (e.g. S.Player.Falling -> S.Player)
             var group = to?.DeclaringType;
             if (group != null)
             {
                 // Broadcast to a group-specific V event: V.StateChanged<S.Player>
-                var method = typeof(StateMachine).GetMethod(nameof(BroadcastGroup), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                var method = typeof(StateMachine).GetMethod(
+                    nameof(BroadcastGroup),
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+                );
                 var generic = method.MakeGenericMethod(group);
                 generic.Invoke(null, new object[] { owner, from, to, group });
             }
         }
 
-        private static void BroadcastGroup<TGroup>(UnityEngine.Object owner, Type from, Type to, Type group)
+        private static void BroadcastGroup<TGroup>(
+            UnityEngine.Object owner,
+            Type from,
+            Type to,
+            Type group
+        )
         {
-            V.Broadcast<V.StateChanged<TGroup>, V.StateChange>(new V.StateChange(owner, from, to, group));
+            V.Broadcast<V.StateChanged<TGroup>, V.StateChange>(
+                new V.StateChange(owner, from, to, group)
+            );
         }
     }
 }

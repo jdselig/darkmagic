@@ -12,7 +12,7 @@ In Unity: **Window → Package Manager → + → Add package from git URL...**
 Paste:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.6.3
+https://github.com/jdselig/darkmagic.git#v3.6.6
 ```
 
 2) **Import Samples**
@@ -45,6 +45,23 @@ That’s it. You can now use:
 Designed for students and rapid iteration: minimal ceremony, helpful guardrails.
 
 ---
+
+## Cheat Sheet
+
+| I want to… | Use this |
+|---|---|
+| Broadcast an event | `V.Broadcast<MyEvent>()` / `V.Broadcast<MyEvent, int>(42)` |
+| Listen for an event (auto-unsub) | `V.On<MyEvent, int>(x => {...}, owner: this)` |
+| Enter a state | `SM.Enter<GameStates.Battle>()` |
+| Check current state | `SM.Is<GameStates.Battle>()` |
+| Wait 1 second (auto-cancel with owner) | `await W.With(this).Seconds(1f);` |
+| Run an async loop tied to an owner | `W.Run(this, async ct => { ... });` |
+| Read input (old-school API) | `I.GetAxis("Horizontal")`, `I.GetKeyDown(KeyCode.Space)` |
+| Pop a dialogue | `await U.PopDialogue("Hello");` |
+| Pop a choice | `var r = await U.PopChoice("Continue?", "Yes", "No");` |
+| Screen transition | `await U.TransitionOut(U.TransitionStyle.Fade);` |
+| HUD text that updates automatically | `U.Display(() => $"SCORE: {score}");` |
+| Log once | `LogOnce("Hello");` |
 
 ## The DarkMagic Map
 
@@ -143,7 +160,10 @@ public static   class S
 
 ## Use it in a MonoBehaviour
 
-To get the clean syntax `S.Enter<...>()`, inherit from `VStateBehaviour`:
+In Start or Awake:
+`S = this.CreateStateMachine();`
+
+To get the clean syntax `S.Enter<...>()`, you can also inherit from `StateBehaviour`.
 
 ```csharp
 using UnityEngine;
@@ -868,160 +888,95 @@ V supports three IL2CPP-safe ways to listen to payload events:
 
 ## U (UI)
 
-U is a code-first, student-friendly UI helper (uGUI + TextMeshPro).
+U is a code-first UI layer built on uGUI + TextMeshPro. It is designed for fast prototyping and JRPG-style menus/dialogue.
 
-### Quick start
+### U.PopDialogue
+Shows a dialogue panel (with automatic pagination if needed). Awaiting returns when the player confirms/cancels.
 
+**Simple**
 ```csharp
-using DarkMagic;
-using TMPro;
-
-public class Example : MonoBehaviour
-{
-    int score;
-
-    async void Start()
-    {
-        // Persistent HUD (reactive)
-        U.Display(() => $"SCORE: {score}", U.Placements.TopLeft);
-
-        // Timed banner
-        await U.PopBanner("A party of goblins attacks!", 2.5f);
-
-        // Dialogue (auto pages)
-        await U.PopDialogue( // defaults to left-aligned text
-"Wow, I never see people come all the way out here...\n\nStay safe.");
-
-        // Choice (returns selected label)
-        var r = await U.PopChoice("Got it?", "Yes", "No");
-        if (r.Ok) Debug.Log($"Player chose: {r.Value}");
-    }
-}
+await U.PopDialogue("A party of goblins attacks!");
 ```
+Expected behavior: a dialogue panel appears (default placement), player confirms to dismiss.
 
-### Pop vs Display
-
-- **Pop\*** = modal, awaits confirm/cancel/selection.
-- **Display** = non-modal, stays on screen and updates via a `Func<string>`.
-
-### PopBanner
-
+**Markup + forced page breaks**
 ```csharp
-await U.PopBanner("Hello!");
-await U.PopBanner("Timed", 1.25f);
-await U.PopBanner("Bottom right", placement: U.Placements.BottomRight);
+await U.PopDialogue("<size=48>SPACETEST</size><pbr/>Arrows to move.<br/>Space to shoot.<pbr/>Good luck!");
 ```
+- `<br/>` becomes a newline
+- `<pbr/>` forces a new page
 
-### PopDialogue
-
-Dialogue auto-pages based on `UConfig.DialogueMaxChars`.
-
-```csharp
-await U.PopDialogue( // defaults to left-aligned text
-"Long message that may span multiple pages...");
-```
-
-### PopChoice
-
-- **Cancel/back** (Esc / right-click / etc.) defaults to selecting the **last** option.
-
-```csharp
-var choice = await U.PopChoice(
-    "SPACETEST! Arrows to move, spacebar to shoot, X for a bomb. Got it?",
-    "Yes", "No"
-);
-
-if (choice.Ok && choice.Value == "Yes")
-{
-    // start game
-}
-```
-
-### Options with icons + descriptions
-
-Use `U.Option` when you want icons and/or descriptions.
-
-```csharp
-var r = await U.PopChoice(
-    "Pick a spell:",
-    new U.Option("Firewave", description: "Hits all enemies", icon: fireSprite),
-    new U.Option("Ice", description: "Single target")
-);
-
-if (r.Ok) Debug.Log(r.Value);
-```
-
-If you provide descriptions, U shows a small description panel under the list and updates it as selection changes.
-
-### Text overrides (optional)
-
-All Pop methods support:
-- `textSize: int?`
-- `textColor: Color?`
-- `textAlign: TextAlignmentOptions?`
-
-```csharp
-await U.PopBanner("Big yellow", textSize: 36, textColor: Color.yellow, textAlign: TextAlignmentOptions.Center);
-await U.PopDialogue( // defaults to left-aligned text
-"Left aligned cyan", textColor: Color.cyan);
-var r = await U.PopChoice("Pick one:", textAlign: TextAlignmentOptions.Center, "Yes", "No");
-```
-
-### Placement rules
-
-Placements affect:
-- panel anchor + pivot + offsets
-- default text alignment (Right placements right-align, Center placements center-align)
-
-### Events (hooks)
-
-U broadcasts V events so students can hook sound effects, etc.
-
-- `DialoguePopped` when a dialogue/banner is shown
-- `ChoiceMade` when a choice is selected
-
-### Configuration
-
-Defaults live in `UConfig`. Students should copy `Samples~/Config/UConfig.cs` into `Assets/Config` to override.
-
-Common knobs:
-- `TextColor`, `SelectedColor`, `SelectedTextColor`
-- `BodyFontSize`, `TitleFontSize`, `ChoiceFontSize`, `DescFontSize`
-- `ChoiceSpacingPx`
-- `DialogueMaxChars`, `BannerMaxChars`
-- `ReferenceResolution`
-
-
-### Text markup (TMP rich text + DarkMagic extras)
-
-U uses TextMeshPro text components, so **TMP rich text tags work out of the box** in `PopDialogue`, `PopBanner`, and `PopChoice` text.
-
-That means you can do things like:
-
+**Options**
 ```csharp
 await U.PopDialogue(
-    "Hm…? <size=40>HELLO!</size> Welcome to <b>The Fortress</b>! " +
-    "My name is <color=#FFD700>Edward</color>, I’ll be your <i>trainer</i>."
+    "Hello there.",
+    placement: U.Placements.TopCenter,
+    textColor: Color.cyan,
+    textSize: 32,
+    panelColor: new Color(0,0,0,0.9f)
 );
 ```
 
-DarkMagic adds a few tiny conveniences:
+### U.Display
+Shows HUD text that updates automatically via a `Func<string>`.
 
-- `<br/>` inserts a newline (equivalent to `\n`)
-- `<pbr/>` forces a **page break** for paginated dialogue (the text after it starts on the next page)
-- `<color=Colors.gold> ... </color>` converts to a TMP hex color using your UI config's gold-ish highlight color
-
-Example:
-
+**Simple**
 ```csharp
-await U.PopDialogue(
-    "Line one<br/>Line two<pbr/>New page! <color=Colors.gold>Shiny!</color>"
-);
+U.Display(() => $"SCORE: {score}");
 ```
 
-Notes:
-- Markup inside your string always wins over defaults and config (for that part of the text).
-- If you use `<pbr/>` in banners, it is treated like a blank line separator (banners don't paginate by default).
+**Multi-line**
+```csharp
+U.Display(() => $"SCORE: {score}
+LEVEL: {level}
+BOMBS: {bombs}");
+```
+
+### U.Menu
+Menu is a convenience wrapper around `U.PopChoice` for “choose one option” flows.
+
+**Simple**
+```csharp
+var r = await U.Menu("Battle!", "Fight", "Item", "Status", "Run");
+if (!r.Cancelled) Debug.Log($"Picked: {r.Value}");
+```
+
+**No title panel**
+```csharp
+var r = await U.Menu("", "Tackle", "Growl", "Roar");
+```
+If the first arg is empty/whitespace, the title panel is skipped and only the options panel appears.
+
+**Place options panel**
+```csharp
+var r = await U.Menu("Battle!", optionsPlacement: U.Placements.BottomLeft,
+    "Fight","Item","Status","Run");
+```
+
+### U.PopChoice
+PopChoice is the underlying “prompt + options” primitive.
+
+**Simple**
+```csharp
+var r = await U.PopChoice("Continue?", "Yes", "No");
+```
+
+### U.PopBanner
+Banners are short messages.
+
+**Simple**
+```csharp
+await U.PopBanner("Quest updated!");
+```
+
+**Timed**
+```csharp
+await U.PopBanner("Saved!", secondsToLive: 1.5f);
+```
+
+### Pagination + anti-flash note
+U uses pooled panels. To prevent a one-frame “flash” of a previous panel position, panels are made invisible before activation.
+For paginated dialogues, the panel stays visible while text changes, so the invisibility step only runs when the panel was previously inactive.
 
 ## Quick logging helpers
 
@@ -1190,3 +1145,60 @@ Advanced overloads also let you pass optional styling params like `textSize:` an
 ## Assembly Definitions (asmdef)
 
 DarkMagic is split into small assemblies (Core, V, W, U, Input, StateMachine, Animation, X) to keep Unity Editor recompile times snappy.
+
+## Screen Transitions (scene-style)
+
+DarkMagic U includes simple, code-only screen transitions for scene changes or dramatic moments.
+
+**Out (cover the screen):**
+```csharp
+await U.TransitionOut(U.TransitionStyle.Fade);
+await U.TransitionOut(U.TransitionStyle.DiagonalWipe, duration: 0.5f);
+await U.TransitionOut(U.TransitionStyle.PixelDissolve, duration: 0.6f);
+```
+
+**In (reveal gameplay):**
+```csharp
+await U.TransitionIn(U.TransitionStyle.Fade);
+```
+
+**Wrap an async action (eg scene load):**
+```csharp
+await U.Transition(async () =>
+{
+    // await SceneManager.LoadSceneAsync("Battle");
+}, style: U.TransitionStyle.DiagonalWipe);
+```
+
+Defaults are configurable in `UConfig`:
+- `TransitionColor` (default black)
+- `TransitionDuration`
+- `TransitionSoftness` (diagonal edge softness)
+- `TransitionPixelScale` (dissolve pixel size)
+## Version
+This README matches package version **3.6.6**.
+
+
+### Typed menus (Menu<T>)
+```csharp
+var res = await U.Menu<MagicCommand>(
+    "Choose Your Magic",
+    spells,
+    label: s => s.DisplayName,
+    description: s => s.Description
+);
+if (res.Success) res.Value.Cast();
+```
+
+### Described menus
+```csharp
+// Tuple form
+var r1 = await U.Menu("Choose Your Magic",
+    ("Fire", "Power 10, may burn opponent."),
+    ("Ice", "Power 8, may freeze opponent."));
+
+// Delimiter form
+var r2 = await U.Menu("Choose Your Magic", ":::",
+    "Fire:::Power 10, may burn opponent.",
+    "Ice:::Power 8, may freeze opponent.");
+```

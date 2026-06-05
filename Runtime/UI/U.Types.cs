@@ -27,15 +27,25 @@ namespace DarkMagic
             Default
         }
 
+        public enum TransitionStyle
+        {
+            Fade,
+            DiagonalWipe,
+            PixelDissolve,
+        }
+
+
         public readonly struct Option
         {
             public readonly string Label;
             public readonly UnityEngine.Sprite Icon;
+            public readonly string Description;
 
-            public Option(string label, UnityEngine.Sprite icon = null)
+            public Option(string label, string description = null, UnityEngine.Sprite icon = null)
             {
                 Label = label;
                 Icon = icon;
+                Description = description;
             }
 
             public static implicit operator Option(string label) => new Option(label);

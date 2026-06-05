@@ -13,4 +13,10 @@ namespace DarkMagic
     {
         public StateMachine S => StateMachineRegistry.For(this);
     }
+
+    public static class StateExtensions
+    {
+        public static StateMachine CreateStateMachine(this MonoBehaviour mb) =>
+            StateMachineRegistry.For(mb);
+    }
 }

@@ -6,7 +6,7 @@ namespace DarkMagic
 {
     /// <summary>
     /// UConfig: defaults for U (code-first UI).
-    /// 
+    ///
     /// Recommended: copy the Config sample's Config folder into Assets/ and edit there.
     /// </summary>
     public enum UStylePreset
@@ -18,11 +18,11 @@ namespace DarkMagic
     public static class UConfig
     {
         // Tracing (auto off in builds)
-    #if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         public static bool TRACE = false;
-    #else
+#else
         public static bool TRACE = false;
-    #endif
+#endif
 
         // Style preset (student-friendly look + feel defaults)
         public static UStylePreset StylePreset = UStylePreset.JRPG;
@@ -38,17 +38,22 @@ namespace DarkMagic
         public static bool PopFadeOut = true;
         public static float PopFadeDuration = 0.12f;
 
+        // Transitions (scene-style wipes)
+        public static Color TransitionColor = Color.black;
+        public static float TransitionDuration = 0.35f;
+        public static float TransitionSoftness = 0.08f; // diagonal edge softness
+        public static float TransitionPixelScale = 120f; // higher = smaller pixels
+
         public static Color TextColor = Color.white;
         public static TMP_FontAsset FontAsset = null;
 
-
         // Font sizes (U defaults). Tune these if UI feels too small/large.
-        public static int BodyFontSize = 22;
-        public static int DialogueFontSize = 22; // default body size for dialogue/choice prompt
-        public static int TitleFontSize = 32;
-        public static int ChoiceFontSize = 24;
-        public static int DescFontSize = 22;
-        public static int PageFontSize = 20;
+        public static int BodyFontSize = 34;
+        public static int DialogueFontSize = 34; // default body size for dialogue/choice prompt
+        public static int TitleFontSize = 44;
+        public static int ChoiceFontSize = 36;
+        public static int DescFontSize = 34;
+        public static int PageFontSize = 32;
 
         // Highlight styles
         public static Color SelectedTextColor = new Color(1f, 0.84f, 0.2f, 1f); // gold-ish
@@ -64,14 +69,14 @@ namespace DarkMagic
         public static int DialogueMaxCharsPerPage = 220;
         public static int DialoguePaddingX = 60;
         public static int DialoguePaddingY = 24;
+        public static int DialoguePaddingTop = 45; // top padding for dialogue text
         public static int BannerPaddingX = 40;
         public static int BannerPaddingY = 12;
-        public static int BannerFontSize = 22;
-        public static float DialogueLineSpacing = 28f;
+        public static int BannerFontSize = 34;
+        public static float DialogueLineSpacing = 56f;
         public static float DisplayLineSpacing = 22f;
         public static float BannerLineSpacing = 20f;
         public static float ChoiceLineSpacing = 18f;
-
 
         public static int BannerMaxChars = 90;
 
@@ -100,6 +105,7 @@ namespace DarkMagic
         // Choice navigation keys
         public static KeyCode[] UpKeys = { KeyCode.UpArrow, KeyCode.W };
         public static KeyCode[] DownKeys = { KeyCode.DownArrow, KeyCode.S };
+
         // Targeting navigation keys
         public static KeyCode[] LeftKeys = { KeyCode.LeftArrow, KeyCode.A };
         public static KeyCode[] RightKeys = { KeyCode.RightArrow, KeyCode.D };
@@ -110,7 +116,12 @@ namespace DarkMagic
         /// </summary>
         // Internal baseline defaults (used to detect whether user explicitly changed values)
         private static readonly Color _defaultPanelColor = new Color(0f, 0f, 0f, 0.77f);
-        private static readonly Color _jrpgPanelColor = new Color(11f/255f, 42f/255f, 122f/255f, 0.93f); // FFVI-ish menu blue, 93% opacity
+        private static readonly Color _jrpgPanelColor = new Color(
+            11f / 255f,
+            42f / 255f,
+            122f / 255f,
+            0.93f
+        ); // FFVI-ish menu blue, 93% opacity
 
         /// <summary>
         /// Apply the chosen StylePreset. Runs after user overrides load,
@@ -127,7 +138,9 @@ namespace DarkMagic
                 }
                 else if (StylePreset == UStylePreset.Liberation)
                 {
-                    FontAsset = Resources.Load<TMP_FontAsset>("Fonts/Liberation/LiberationSans SDF");
+                    FontAsset = Resources.Load<TMP_FontAsset>(
+                        "Fonts/Liberation/LiberationSans SDF"
+                    );
                 }
             }
 
@@ -147,27 +160,33 @@ namespace DarkMagic
             return;
 #endif
             var t = System.Type.GetType("DarkMagic.UConfigUser, Assembly-CSharp");
-            if (t == null) t = System.Type.GetType("DarkMagic.UConfigUser");
-            if (t == null) return;
+            if (t == null)
+                t = System.Type.GetType("DarkMagic.UConfigUser");
+            if (t == null)
+                return;
 
             try
             {
-                var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
+                var flags =
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
                 foreach (var f in t.GetFields(flags))
                 {
                     var dst = typeof(UConfig).GetField(f.Name, flags);
-                    if (dst == null) continue;
-                    if (dst.FieldType != f.FieldType) continue;
+                    if (dst == null)
+                        continue;
+                    if (dst.FieldType != f.FieldType)
+                        continue;
                     dst.SetValue(null, f.GetValue(null));
                 }
             }
             catch (System.Exception ex)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[DarkMagic/U] Failed to apply UConfigUser overrides: " + ex.Message);
+                Debug.LogWarning(
+                    "[DarkMagic/U] Failed to apply UConfigUser overrides: " + ex.Message
+                );
 #endif
             }
         }
-
     }
 }
