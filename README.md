@@ -12,7 +12,7 @@ In Unity: **Window → Package Manager → + → Add package from git URL...**
 Paste:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.8.2
+https://github.com/jdselig/darkmagic.git#v3.6.6
 ```
 
 2) **Import Samples**
@@ -1202,3 +1202,26 @@ var r2 = await U.Menu("Choose Your Magic", ":::",
     "Fire:::Power 10, may burn opponent.",
     "Ice:::Power 8, may freeze opponent.");
 ```
+
+
+### U.PopOutcome (floating combat text)
+
+Pops a JRPG-style floating number (or any text) near a world-space target. Great for damage/heal popups.
+
+**Simple (damage)**
+```csharp
+U.PopOutcome(targetTransform, 125);
+```
+Expected behavior: white “125” appears near the target, bounces upward, then fades.
+
+**Color override (healing)**
+```csharp
+U.PopOutcome(targetTransform, 50, Color.green);
+```
+
+**Custom text + size (crit)**
+```csharp
+U.PopOutcome(targetTransform, "+99999 DEXTERITY", Color.yellow, textSize: 56);
+```
+
+This call works with or without `await`. If you `await` it, the await completes when the popup finishes animating.

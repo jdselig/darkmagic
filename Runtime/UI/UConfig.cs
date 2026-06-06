@@ -48,6 +48,19 @@ namespace DarkMagic
         public static TMP_FontAsset FontAsset = null;
 
         // Font sizes (U defaults). Tune these if UI feels too small/large.
+
+        // Outcome numbers (JRPG combat text)
+        public static int OutcomeFontSize = 36;
+        public static Color OutcomeColor = Color.white;
+        public static float OutcomeDuration = 0.8f;
+        public static float OutcomeRisePx = 70f;
+        public static float OutcomeBouncePx = 14f;
+        public static float OutcomeScalePop = 1.15f;
+        public static float OutcomeCanvasPaddingPx = 12f;
+        public static float OutcomeOffsetX = 32f; // pixels (canvas space) added after world->canvas conversion
+        public static float OutcomeOffsetY = 28f; // pixels (canvas space) added after world->canvas conversion
+        public static string OutcomeAnchorChildName = "OutcomeAnchor";
+        public static float OutcomeWorldOffsetY = 1.0f; // world units added to target.position before projection
         public static int BodyFontSize = 34;
         public static int DialogueFontSize = 34; // default body size for dialogue/choice prompt
         public static int TitleFontSize = 44;
