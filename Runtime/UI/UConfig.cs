@@ -123,6 +123,20 @@ namespace DarkMagic
         public static KeyCode[] LeftKeys = { KeyCode.LeftArrow, KeyCode.A };
         public static KeyCode[] RightKeys = { KeyCode.RightArrow, KeyCode.D };
 
+        // Target filtering (global predicate). If provided, only targets passing this are selectable by default.
+        public static System.Func<Transform, bool> TargetIsTargetable = null;
+
+        // Targeting (U.Target)
+        public static string TargetMarkerGlyph = "^"; // ASCII-safe marker (avoid missing glyphs in SDF fonts)
+        public static Color TargetMarkerColor = new Color(1f, 0.88235295f, 0.03137255f, 1f); // #FFE108
+        public static float TargetMarkerScaleY = -1f; // flip caret marker downward by default
+        public static TMP_FontAsset TargetMarkerFont = null; // optional override; defaults to the same font used by U
+        public static Vector2 TargetMarkerScreenOffset = new Vector2(0, 40); // extra screen-space offset (pixels)
+        public static float TargetMarkerWorldOffsetY = 1.0f; // world units added if no anchors/colliders
+        public static string TargetAnchorChildName = "TargetAnchor";
+        public static GameObject TargetMarkerPrefab = null; // optional UI prefab override (must have RectTransform)
+        public static Sprite TargetMarkerSprite = null; // optional sprite marker override (added as Image)
+
         /// <summary>
         /// U will pull matching public static fields from it at startup and apply them to UConfig.
         /// This lets students edit settings in Assets/ without touching the package.

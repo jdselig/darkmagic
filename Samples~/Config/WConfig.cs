@@ -1,5 +1,5 @@
-using UnityEngine;
 using DarkMagic;
+using UnityEngine;
 
 /// <summary>
 /// WConfig: One obvious place to configure W.
@@ -7,7 +7,7 @@ using DarkMagic;
 /// </summary>
 public static class WConfig
 {
-    public const bool TRACE = true;
+    public const bool TRACE = false;
     public const bool GUARDRAILS = true;
 
     private static bool AllowedNow =>

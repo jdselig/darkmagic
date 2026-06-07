@@ -12,7 +12,7 @@ In Unity: **Window → Package Manager → + → Add package from git URL...**
 Paste:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.6.6
+https://github.com/jdselig/darkmagic.git#v3.9.4
 ```
 
 2) **Import Samples**
@@ -1225,3 +1225,105 @@ U.PopOutcome(targetTransform, "+99999 DEXTERITY", Color.yellow, textSize: 56);
 ```
 
 This call works with or without `await`. If you `await` it, the await completes when the popup finishes animating.
+
+## U.Target (Targeting)
+
+U.Target provides JRPG-style target selection (list cycling) with optional mouse hover/raycast. It works in both 2D and 3D.
+
+### Select a single target
+
+**Simple (JRPG cycling)**
+```csharp
+var enemies = new List<Transform> { darcula, darcula2 };
+var t = await U.Target.Select(enemies);
+if (!t.Cancelled) Debug.Log($"Target: {t.Value.name}");
+```
+
+**From a group Transform (direct children)**
+```csharp
+var enemyParty = GameObject.Find("EnemyParty").transform;
+var t = await U.Target.Select(enemyParty);
+```
+
+**Typed targets**
+```csharp
+var t = await U.Target.Select<Unit>(
+    enemyUnits,
+    getTransform: u => u.transform,
+    filter: u => u.HP > 0
+);
+```
+
+### Select multiple targets
+
+TargetMode options:
+- `Single` (default)
+- `All`
+- `UpTo` (choose up to N, confirm early)
+- `Exact` (choose exactly N)
+
+```csharp
+var all = await U.Target.SelectMany(enemies, mode: U.TargetMode.All);
+
+var upTo3 = await U.Target.SelectMany(enemies, mode: U.TargetMode.UpTo, count: 3);
+
+var exact2 = await U.Target.SelectMany(enemies, mode: U.TargetMode.Exact, count: 2);
+```
+
+### Mouse hover / raycast (optional)
+
+```csharp
+var rules = new U.TargetRules { AllowMouseRaycast = true };
+var t = await U.Target.Select(enemies, rules: rules);
+```
+
+### Default filtering (global)
+
+You can set a global predicate to exclude targets by default (e.g. dead units).
+
+```csharp
+UConfig.TargetIsTargetable = t =>
+    t != null && t.gameObject.activeInHierarchy;
+```
+
+### Target marker overrides (glyph / sprite / prefab)
+
+By default, the marker is a TMP text glyph. If your font doesn’t include certain Unicode characters, use an ASCII-safe glyph:
+
+```csharp
+UConfig.TargetMarkerGlyph = "^";
+UConfig.TargetMarkerScaleY = -1f;
+UConfig.TargetMarkerColor = new Color(1f, 0.88235295f, 0.03137255f, 1f); // #FFE108
+// Optional: force marker to match U's font
+UConfig.TargetMarkerFont = null;
+```
+
+You can override the marker with a Sprite (UI Image), or a Prefab.
+
+**Sprite override**
+```csharp
+UConfig.TargetMarkerSprite = Resources.Load<Sprite>("TargetCursorSprite");
+```
+
+**Prefab override**
+```csharp
+UConfig.TargetMarkerPrefab = Resources.Load<GameObject>("TargetCursorPrefab");
+```
+
+Priority:
+1) Prefab
+2) Sprite
+3) Glyph
+
+### Marker positioning + anchors
+By default the marker appears above the current target. The world point used follows this priority:
+1) Child named `TargetAnchor`
+2) Child named `OutcomeAnchor`
+3) Top of Collider2D/Collider bounds
+4) Pivot + `UConfig.TargetMarkerWorldOffsetY`
+
+You can also add an extra screen-space offset:
+```csharp
+UConfig.TargetMarkerScreenOffset = new Vector2(0, 40);
+```
+
