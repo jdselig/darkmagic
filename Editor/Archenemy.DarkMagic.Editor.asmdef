@@ -2,13 +2,14 @@
   "name": "Archenemy.DarkMagic.Editor",
   "rootNamespace": "",
   "references": [
+    "Archenemy.DarkMagic.Animation",
     "Archenemy.DarkMagic.Core",
-    "Archenemy.DarkMagic.V",
-    "Archenemy.DarkMagic.W",
-    "Archenemy.DarkMagic.U",
     "Archenemy.DarkMagic.Input",
     "Archenemy.DarkMagic.StateMachine",
-    "Archenemy.DarkMagic.Animation",
+    "Archenemy.DarkMagic.Stats",
+    "Archenemy.DarkMagic.U",
+    "Archenemy.DarkMagic.V",
+    "Archenemy.DarkMagic.W",
     "Archenemy.DarkMagic.X"
   ],
   "includePlatforms": [

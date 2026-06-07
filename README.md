@@ -1327,3 +1327,111 @@ You can also add an extra screen-space offset:
 UConfig.TargetMarkerScreenOffset = new Vector2(0, 40);
 ```
 
+## Stats (Stat + StatBlock)
+
+DarkMagic stats are intentionally simple: Base + Temp (buff/debuff) + Equipment, with an optional Remaining value for resource stats like HP/MP.
+
+### Stat
+
+```csharp
+var hp = new Stat("Health", "HP", initial: 120, persists: true, isLethal: true);
+hp.Damage(15);
+Debug.Log(hp.Current); // 105
+```
+
+**Syntactic sugar**
+```csharp
+// implicit int conversion
+int hpNow = hp;
+
+// temp buff/debuff (adds to TempModifiers)
+hp += 5;   // buff
+hp -= 10;  // debuff
+
+// base (persistent) changes: uses >> because C# cannot overload a custom '>>>'
+hp >> -4;  // permanent -4 base
+```
+
+### StatBlock
+
+```csharp
+var stats = new StatBlock(
+    new Stat("Health","HP", 120, persists:true, isLethal:true),
+    new Stat("Strength","STR", 12)
+);
+
+// lookup by name or abbreviation
+stats["HP"].Damage(10);
+Debug.Log(stats.GetInt("STR"));
+```
+
+**Refresh**
+```csharp
+stats.Refresh();       // clears TempModifiers; resets non-persistent Remaining
+stats.Refresh(force:true); // refills everything to Base
+```
+
+### About .STR / .Strength dot access
+C# cannot dynamically create real properties at runtime. You have three options:
+1) Use `stats["STR"]` / `stats["Strength"]` (recommended for v1).
+2) Create a small wrapper class with fields for your game’s known stats (students can copy/paste).
+3) Use `dynamic` access (works, but we avoid it by default for portability).
+
+
+### Typed StatBlocks (dot access)
+```csharp
+public sealed class PlayerStats : StatBlock
+{
+    public Stat HP  = new("Health","HP",120, persists:true, isLethal:true);
+    public Stat STR = new("Strength","STR",12);
+
+    public PlayerStats() => AutoRegisterFields();
+}
+```
+Now you can write:
+```csharp
+player.Stats.HP.Damage(10);
+player.Stats.STR += 5; // temp buff
+player.Stats.STR >> 2; // permanent base +2
+```
+
+
+### Resources vs buffs
+For resource stats like HP/MP, use:
+```csharp
+stats.HP.Damage(10);
+stats.HP.Heal(5);
+```
+`stats.HP -= 10` modifies TempModifiers (a debuff), not Remaining damage.
+
+
+### Threshold checks
+`Stat` calls `CheckThreshold()` automatically after changes to Remaining, TempModifiers, EquipmentModifiers, and Base.
+This means XP/Level-style stats can trigger `OnThresholdMet` without a dedicated gain method.
+
+
+### IsResource (HP/MP sugar)
+If `IsResource` is true, `+=` heals and `-=` damages (changes Remaining).
+For non-resource stats, `+=`/`-=` change TempModifiers (buff/debuff).
+
+
+Note: Because the StatBlock indexer has a setter, compound assignments work:
+```csharp
+stats["HP"] -= 10; // for IsResource stats, this damages Remaining
+stats["STR"] += 5;  // for non-resource stats, this buffs TempModifiers
+```
+
+
+### LevelUp
+```csharp
+stats.LevelUp(); // applies Delta to Base for each stat
+stats["HP"].LevelUp();
+```
+For resource stats, LevelUp refills Remaining to the new max.
+
+
+### Inspector polish (Stats)
+DarkMagic includes custom inspector drawers for Stat and StatBlock to keep stats readable in the Unity Inspector.
+
+
+(Stats Inspector) StatBlocks show LevelUpAll, RefreshAll, and RefreshForce buttons in the Inspector.
