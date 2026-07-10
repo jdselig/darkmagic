@@ -12,7 +12,7 @@ In Unity: **Window → Package Manager → + → Add package from git URL...**
 Paste:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.9.4
+https://github.com/jdselig/darkmagic.git#v3.10.11
 ```
 
 2) **Import Samples**
