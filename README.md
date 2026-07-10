@@ -1435,3 +1435,7 @@ DarkMagic includes custom inspector drawers for Stat and StatBlock to keep stats
 
 
 (Stats Inspector) StatBlocks show LevelUpAll, RefreshAll, and RefreshForce buttons in the Inspector.
+
+
+### Unity 6.5 compatibility
+DarkMagic avoids Unity's deprecated `Object.GetInstanceID()` API for internal owner tracking, so it remains compatible with Unity 6.3, 6.4, and 6.5+.

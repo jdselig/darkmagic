@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,7 +35,7 @@ namespace DarkMagic
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
 
-            int id = owner.GetInstanceID();
+            int id = GetOwnerKey(owner);
 
             if (_machines.TryGetValue(id, out var entry))
             {
@@ -72,5 +73,14 @@ namespace DarkMagic
                     _machines.Remove(key);
             }
         }
+        // Unity 6.5 makes the old Unity instance-id API a compile error.
+        // For DarkMagic's internal owner tracking, we only need a stable managed-object key
+        // for guardrails/registries, not Unity's native InstanceID/EntityId.
+        private static int GetOwnerKey(UnityEngine.Object owner)
+        {
+            return RuntimeHelpers.GetHashCode(owner);
+        }
+
+
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -657,7 +658,7 @@ namespace DarkMagic
             }
 
             // Trap A-ish: repeated subscriptions (often from Update)
-            int ownerId = owner.GetInstanceID();
+            int ownerId = GetOwnerKey(owner);
             var key = new OwnerEventKey { EventType = evtType, OwnerId = ownerId };
 
             int frame = Time.frameCount;
@@ -699,7 +700,7 @@ namespace DarkMagic
 
                 if (!ownerRef.TryGetTarget(out var existingOwner) || existingOwner == null) continue;
 
-                if (existingOwner.GetInstanceID() == ownerId)
+                if (GetOwnerKey(existingOwner) == ownerId)
                 {
                     sameOwnerExists = true;
 
@@ -1310,5 +1311,14 @@ namespace DarkMagic
                     _subs.Remove(evtType);
             }
         }
+        // Unity 6.5 makes the old Unity instance-id API a compile error.
+        // For DarkMagic's internal owner tracking, we only need a stable managed-object key
+        // for guardrails/registries, not Unity's native InstanceID/EntityId.
+        private static int GetOwnerKey(UnityEngine.Object owner)
+        {
+            return RuntimeHelpers.GetHashCode(owner);
+        }
+
+
     }
 }
