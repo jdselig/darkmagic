@@ -22,7 +22,14 @@ Current Unity compatibility goal:
 
 ## Current latest known version
 
-Latest version produced in the Codex session: **3.11.1**
+Latest version produced in the Codex session: **3.11.2**
+
+Patch intent for 3.11.2:
+
+- Detect TMP font materials that resolve to Unity's internal error shader.
+- Keep DarkMagic's bundled font assets while importing Unity's official TMP Essential Resources through a guided, one-click editor setup.
+- Block broken UI builds with actionable instructions and fail clearly at runtime instead of rendering magenta blocks.
+- Verify actual font materials/shaders in PlayMode tests.
 
 Patch intent for 3.11.1:
 
@@ -576,6 +583,7 @@ Useful recent milestones:
 - `v3.10.12`: fixed non-resource Current so modifiers display correctly.
 - `v3.11.0`: tests/validation, zero-config TMP fallback, Stats helpers, focused docs, and U outcome refactor.
 - `v3.11.1`: Unity 6.5+ baseline and release-safe cross-assembly user config.
+- `v3.11.2`: guided TMP Essentials setup plus runtime, build, and PlayMode shader validation.
 
 ## Likely future work
 

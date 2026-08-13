@@ -32,7 +32,7 @@ namespace DarkMagic
                 "<b>[DarkMagic]</b> Quick setup tip:\n" +
                 "1) Window → Package Manager → DarkMagic → Samples → Import <b>Config</b>\n" +
                 "2) Edit or move the imported config scripts under <b>Assets</b>.\n" +
-                "DarkMagic also works with zero config, so import this only when you want overrides."
+                "DarkMagic also works without custom config, so import this only when you want overrides."
             );
         }
 

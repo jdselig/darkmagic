@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
@@ -24,6 +25,8 @@ namespace DarkMagic.Tests
                 var text = display.GetComponentInChildren<TextMeshProUGUI>();
                 Assert.That(text, Is.Not.Null);
                 Assert.That(text.font, Is.Not.Null);
+                AssertWorkingMaterial(text.font, "the configured DarkMagic font");
+                AssertWorkingMaterial(text.fontSharedMaterial, "the rendered text");
                 text.ForceMeshUpdate();
 
                 Assert.That(text.font.HasCharacters(sample), Is.True);
@@ -31,10 +34,15 @@ namespace DarkMagic.Tests
                 Assert.That(text.textInfo.meshInfo[0].vertexCount, Is.GreaterThan(0));
                 Assert.That(text.preferredWidth, Is.GreaterThan(0));
 
+                var defaultFont = Resources.Load<TMP_FontAsset>("Default/Default SDF");
+                Assert.That(defaultFont, Is.Not.Null);
+                AssertWorkingMaterial(defaultFont, "DarkMagic's default font");
+
                 var liberation = Resources.Load<TMP_FontAsset>(
                     "Fonts/Liberation/LiberationSans SDF"
                 );
                 Assert.That(liberation, Is.Not.Null);
+                AssertWorkingMaterial(liberation, "DarkMagic's Liberation font");
                 liberation.TryAddCharacters(sample);
                 Assert.That(liberation.HasCharacters(sample), Is.True);
             }
@@ -72,6 +80,26 @@ namespace DarkMagic.Tests
                 Object.Destroy(cameraObject);
                 Object.Destroy(target);
             }
+        }
+
+        private static void AssertWorkingMaterial(TMP_FontAsset font, string label)
+        {
+            Assert.That(font.material, Is.Not.Null, $"{label} has no material.");
+            AssertWorkingMaterial(font.material, label);
+        }
+
+        private static void AssertWorkingMaterial(Material material, string label)
+        {
+            Assert.That(material, Is.Not.Null, $"{label} has no material.");
+            Assert.That(material.shader, Is.Not.Null, $"{label} has no shader.");
+            Assert.That(
+                material.shader.name,
+                Does.Not.Contain("InternalErrorShader"),
+                $"{label} resolved to Unity's error shader. Import TMP Essential Resources."
+            );
+
+            if (!Application.isBatchMode && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
+                Assert.That(material.shader.isSupported, Is.True, $"{label}'s shader is unsupported.");
         }
     }
 }

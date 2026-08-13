@@ -10,7 +10,8 @@
     "Archenemy.DarkMagic.U",
     "Archenemy.DarkMagic.V",
     "Archenemy.DarkMagic.W",
-    "Archenemy.DarkMagic.X"
+    "Archenemy.DarkMagic.X",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

@@ -2,6 +2,25 @@
 
 All notable DarkMagic package changes are recorded here. Versions follow semantic versioning.
 
+## [3.11.2] - 2026-08-13
+
+### Fixed
+
+- DarkMagic now detects TMP font materials that resolve to Unity's internal error shader instead of allowing magenta text blocks.
+- The font smoke test now verifies real working materials and shaders, not only glyph geometry.
+
+### Added
+
+- A beginner-friendly **Tools → DarkMagic → Setup UI** command and first-install prompt for importing Unity's official TMP Essential Resources.
+- A pre-build check that explains how to fix a missing or broken U font shader.
+- Runtime guidance that fails clearly instead of silently rendering broken UI.
+
+### Changed
+
+- DarkMagic continues to ship its own dynamic font assets, while their materials use Unity's maintained TMP shaders.
+- A working `UConfig.FontAsset` or legacy `UConfig.Font` remains an optional advanced path and skips the setup prompt.
+- The bundled Liberation material now stores the scale ratios expected by Unity's current TMP shader instead of becoming dirty on first validation.
+
 ## [3.11.1] - 2026-08-13
 
 ### Changed

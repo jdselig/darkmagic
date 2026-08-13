@@ -1,6 +1,12 @@
 # Code-first UI with U
 
-`U` creates classroom-friendly UI at runtime with sensible defaults. It includes dynamic fonts and fallback TMP settings, so its basic path requires no prefabs, canvas, or TMP Essentials import.
+`U` creates classroom-friendly UI at runtime with sensible defaults. It needs no prefabs or hand-built canvas. DarkMagic ships its font assets and uses Unity's official TMP shaders.
+
+## One-time TMP setup
+
+When DarkMagic first detects a missing or broken TMP shader, choose **Import Now**. You can repeat the check from **Tools → DarkMagic → Setup UI**. Unity imports TMP Essential Resources into `Assets/TextMesh Pro`; no separate package download is needed.
+
+DarkMagic will stop with a clear setup message instead of showing magenta blocks. It also checks before player builds. If your project assigns a working custom `UConfig.FontAsset`, DarkMagic uses it and skips the import prompt.
 
 Import the Config sample for optional project-owned styling. `UConfigUser` can live in its own assembly; DarkMagic discovers its public static fields and applies them in Editor, Mono, and IL2CPP builds. Keep the sample's `[Preserve]` attribute so release stripping cannot remove it.
 
