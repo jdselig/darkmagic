@@ -2,6 +2,8 @@
 
 `U` creates classroom-friendly UI at runtime with sensible defaults. It includes dynamic fonts and fallback TMP settings, so its basic path requires no prefabs, canvas, or TMP Essentials import.
 
+Import the Config sample for optional project-owned styling. `UConfigUser` can live in its own assembly; DarkMagic discovers its public static fields and applies them in Editor, Mono, and IL2CPP builds. Keep the sample's `[Preserve]` attribute so release stripping cannot remove it.
+
 ## Banners and dialogue
 
 ```csharp

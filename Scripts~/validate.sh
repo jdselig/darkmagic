@@ -52,11 +52,6 @@ if rg -n '\.GetInstanceID\s*\(' "$package_root/Runtime" "$package_root/Editor" -
   exit 1
 fi
 
-if rg -n '\.GetEntityId\s*\(' "$package_root/Runtime" "$package_root/Editor" --glob '*.cs'; then
-  echo "GetEntityId would break Unity 6.3/6.4 compatibility."
-  exit 1
-fi
-
 version="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' "$package_root/package.json" | head -1)"
 if ! grep -Fq "darkmagic.git#v$version" "$package_root/README.md"; then
   echo "README install tag does not match package version $version."

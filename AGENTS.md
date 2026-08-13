@@ -17,12 +17,18 @@ Core philosophy:
 
 Current Unity compatibility goal:
 
-- Support Unity 6.3, 6.4, and 6.5+.
+- Support Unity 6.5 and newer.
 - Avoid APIs deprecated/erroring in Unity 6.5, especially `Object.GetInstanceID()`.
 
 ## Current latest known version
 
-Latest version produced in the Codex session: **3.11.0**
+Latest version produced in the Codex session: **3.11.1**
+
+Patch intent for 3.11.1:
+
+- Set the documented/package support baseline to Unity 6.5+.
+- Verify imported user config across real Unity assembly boundaries.
+- Make `UConfigUser` overrides work in release Mono and IL2CPP players.
 
 Patch intent for 3.11.0:
 
@@ -50,7 +56,7 @@ private static int GetOwnerKey(UnityEngine.Object owner)
 }
 ```
 
-This is intentionally not `GetEntityId()` because DarkMagic needs to keep working in Unity 6.3 and 6.4. The owner key is only used for internal guardrails/registries/warnings, not gameplay identity, persistence, or save data.
+The owner key remains internal guardrail/registry bookkeeping, not gameplay identity, persistence, or save data.
 
 When opening this repo, first check:
 
@@ -72,14 +78,13 @@ When making changes:
 4. Bump `package.json` version for package changes.
 5. Prefer small, focused patches.
 6. Mention exact files changed in summaries.
-7. Avoid breaking Unity 6.3/6.4 while fixing Unity 6.5+.
+7. Keep the package compatible with Unity 6.5 and newer.
 8. Search for duplicate/outdated docs after API changes.
 
 Useful checks:
 
 ```bash
 grep -R "GetInstanceID" Runtime Editor -n
-grep -R "GetEntityId" Runtime Editor -n
 grep -R "TODO\|FIXME" Runtime Editor -n
 ```
 
@@ -570,6 +575,7 @@ Useful recent milestones:
 - `v3.10.11`: Unity 6.5 compatibility for internal owner tracking.
 - `v3.10.12`: fixed non-resource Current so modifiers display correctly.
 - `v3.11.0`: tests/validation, zero-config TMP fallback, Stats helpers, focused docs, and U outcome refactor.
+- `v3.11.1`: Unity 6.5+ baseline and release-safe cross-assembly user config.
 
 ## Likely future work
 

@@ -1,9 +1,9 @@
 {
   "name": "com.archenemy.darkmagic",
-  "version": "3.11.0",
+  "version": "3.11.1",
   "displayName": "DarkMagic",
   "description": "A student-friendly Unity toolkit for events, state, Awaitables, input, utilities, animation, code-first UI, targeting, menu flow, and JRPG-style stats.",
-  "unity": "6000.3",
+  "unity": "6000.5",
   "author": {
     "name": "Archenemy Games"
   },

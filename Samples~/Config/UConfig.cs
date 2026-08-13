@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace DarkMagic
 {
@@ -7,6 +8,7 @@ namespace DarkMagic
     /// Student-owned overrides for DarkMagic U.
     /// Copy this whole Config folder into your project's Assets/ folder, then tweak values here.
     /// </summary>
+    [Preserve]
     public static class UConfigUser
     {
         // STYLE PRESET
@@ -34,7 +36,7 @@ namespace DarkMagic
         // public static int DialogueFontSize = 20;
         // public static int ChoiceFontSize = 22;
         // public static int BannerFontSize = 22;
-        // public static int DisplayFontSize = 18;
+        // public static int BodyFontSize = 34; // dialogue body + reactive displays
 
         // PADDING
         // public static int DialoguePaddingX = 60;

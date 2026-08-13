@@ -27,6 +27,8 @@ I.Axes["Throttle"] = () => Mathf.Clamp01(myThrottle);
 I.AxesRaw["Throttle"] = () => myThrottle;
 ```
 
+Custom names are case-insensitive and take priority over built-in Input System or legacy mappings.
+
 Import **Input Starter** from Package Manager when students want a visible Input Actions asset. Its optional bridge feeds actions back into the same `I.GetButton`/`I.GetAxis` calls.
 
 `I.WarnOnFallback` explains missing mappings once instead of throwing. `I.Trace` adds development diagnostics.

@@ -9,6 +9,8 @@ This sample provides one obvious place to configure DarkMagic:
 - `UConfig.cs` – code-first UI appearance and behavior
 - `StatConfig.cs` – typed player/enemy StatBlock examples
 
+The included `DarkMagic.Config.asmdef` keeps the config in its own assembly. This catches namespace/reference mistakes early while global event and state types remain easy to use from normal project scripts.
+
 ## Import steps
 
 Unity → Window → Package Manager → select **DarkMagic** → **Samples** → Import **Config**.

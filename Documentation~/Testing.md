@@ -35,13 +35,16 @@ The script:
 
 1. Confirms the test project references this exact checkout.
 2. Rejects Unity 6.5-incompatible `GetInstanceID()` calls.
-3. Rejects `GetEntityId()` so Unity 6.3/6.4 remain supported.
-4. Checks README/package version consistency.
-5. Compiles the package in batch mode.
-6. Runs EditMode tests.
-7. Runs PlayMode tests.
+3. Checks README/package version consistency.
+4. Compiles the package in batch mode.
+5. Runs EditMode tests.
+6. Runs PlayMode tests.
 
 Results and Unity logs are written to `TestResults~/`, which Unity and Git ignore.
+
+## Consumer-config validation
+
+Package tests prove DarkMagic's internals. Before a config-sensitive release, also import the Config sample into a separate Unity project and compile a normal project script that uses its event types, state types, custom input mappings, U overrides, and typed Stats. Build that project as both Mono and IL2CPP; this catches assembly-boundary and linker-stripping problems that package tests cannot reproduce by themselves.
 
 After committing a release and creating its `vX.Y.Z` tag, run `Scripts~/check-release.sh` to verify that the working tree, tag, README install URL, and changelog agree.
 

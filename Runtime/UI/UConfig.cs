@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -182,13 +183,7 @@ namespace DarkMagic
         // That file defines a DarkMagic.UConfigUser class which overrides these defaults.
         public static void ApplyUserOverrides()
         {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            // In non-dev builds, we skip reflection-based overrides for speed and AOT friendliness.
-            return;
-#endif
-            var t = System.Type.GetType("DarkMagic.UConfigUser, Assembly-CSharp");
-            if (t == null)
-                t = System.Type.GetType("DarkMagic.UConfigUser");
+            var t = FindUserConfigType();
             if (t == null)
                 return;
 
@@ -216,6 +211,22 @@ namespace DarkMagic
                 _ = ex;
 #endif
             }
+        }
+
+        private static Type FindUserConfigType()
+        {
+            var direct = Type.GetType("DarkMagic.UConfigUser, Assembly-CSharp");
+            if (direct != null)
+                return direct;
+
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var candidate = assembly.GetType("DarkMagic.UConfigUser", false);
+                if (candidate != null)
+                    return candidate;
+            }
+
+            return null;
         }
     }
 }

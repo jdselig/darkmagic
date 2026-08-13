@@ -2,9 +2,9 @@
 
 DarkMagic is a student-friendly Unity helper package by John Selig. It keeps common game-dev code readable, low-ceremony, and easy to teach while leaving advanced paths available when a project grows.
 
-Current version: **3.11.0**
+Current version: **3.11.1**
 
-Unity support: **6.3, 6.4, and 6.5+**
+Unity support: **6.5+**
 
 Verified with: **Unity 6000.5.8f1**
 
@@ -13,7 +13,7 @@ Verified with: **Unity 6000.5.8f1**
 In Unity, open **Window → Package Manager → + → Add package from Git URL** and enter:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.11.0
+https://github.com/jdselig/darkmagic.git#v3.11.1
 ```
 
 For local package development, add this to the consuming project’s `Packages/manifest.json`:
@@ -253,11 +253,13 @@ Package Manager exposes three optional samples:
 
 Most projects can begin with no setup. Import a sample when students need one obvious place to customize behavior.
 
+The Config sample compiles in its own assembly, so its global event/state names and `DarkMagic` settings are checked across a real Unity assembly boundary. Its U overrides are preserved and applied in Editor, Mono, and IL2CPP builds.
+
 ## Compatibility
 
-DarkMagic targets Unity `6000.3` and remains source-compatible with Unity 6.3, 6.4, and 6.5+.
+DarkMagic targets Unity `6000.5` and supports Unity 6.5 and newer.
 
-Version 3.11.0 is verified in the Unity 6000.5.8f1 Editor and in standalone macOS Mono and IL2CPP players.
+Version 3.11.1 is verified in the Unity 6000.5.8f1 Editor and in standalone macOS Mono and IL2CPP players.
 
 Unity 6.5 deprecated/error-gated `Object.GetInstanceID()`. DarkMagic’s internal owner registries instead use `RuntimeHelpers.GetHashCode(owner)`. These keys are only for runtime bookkeeping and must not be used as gameplay IDs or save data.
 

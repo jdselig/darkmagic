@@ -2,6 +2,22 @@
 
 All notable DarkMagic package changes are recorded here. Versions follow semantic versioning.
 
+## [3.11.1] - 2026-08-13
+
+### Changed
+
+- Unity support now targets Unity 6.5 and newer.
+- The Config sample compiles in its own assembly to exercise real consumer namespace boundaries.
+- `UConfigUser` discovery now works outside `Assembly-CSharp` and in non-development players.
+- `I.GetButton`, `I.GetAxis`, and `I.GetAxisRaw` now honor their documented custom mapping dictionaries on every input backend.
+- Stale U config examples now use the current `BodyFontSize` setting.
+- Dynamic Liberation font tests no longer persist generated kerning data into the package asset.
+
+### Compatibility
+
+- Verified with imported V, S, W, I, U, and typed Stats config in Unity 6000.5.8f1.
+- Verified in standalone macOS Mono and IL2CPP players.
+
 ## [3.11.0] - 2026-08-13
 
 ### Added

@@ -12,6 +12,7 @@ using DarkMagic;
 public static class VConfig
 {
     public const bool TRACE = true;
+    public const bool GUARDRAILS = true;
 
     private static bool TraceAllowedNow =>
 #if UNITY_EDITOR
@@ -24,6 +25,7 @@ public static class VConfig
     private static void Init()
     {
         V.Trace = TRACE && TraceAllowedNow;
+        V.Guardrails = GUARDRAILS;
 
         if (V.Trace)
             Debug.Log("<color=#7CFFB2><b>[V]</b> Trace enabled (VConfig)</color>");

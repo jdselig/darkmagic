@@ -28,13 +28,16 @@ namespace DarkMagic
         /// Custom button providers. If a name exists here, it overrides the built-in defaults.
         /// Signature: (held, down, up)
         /// </summary>
-        public static readonly Dictionary<string, Func<(bool held, bool down, bool up)>> Buttons = new();
+        public static readonly Dictionary<string, Func<(bool held, bool down, bool up)>> Buttons =
+            new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Custom axis providers (smoothed).</summary>
-        public static readonly Dictionary<string, Func<float>> Axes = new();
+        public static readonly Dictionary<string, Func<float>> Axes =
+            new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Custom raw axis providers (snapped).</summary>
-        public static readonly Dictionary<string, Func<float>> AxesRaw = new();
+        public static readonly Dictionary<string, Func<float>> AxesRaw =
+            new(StringComparer.OrdinalIgnoreCase);
 
         // --------------------------
         // Key / Mouse / Touch (core)
@@ -82,6 +85,9 @@ namespace DarkMagic
 
         public static bool GetButton(string buttonName)
         {
+            if (TryGetCustomButton(buttonName, out var custom))
+                return custom.held;
+
     #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             return GetButtonNew(buttonName, mode: 0);
     #else
@@ -98,6 +104,9 @@ namespace DarkMagic
 
         public static bool GetButtonDown(string buttonName)
         {
+            if (TryGetCustomButton(buttonName, out var custom))
+                return custom.down;
+
     #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             return GetButtonNew(buttonName, mode: 1);
     #else
@@ -114,6 +123,9 @@ namespace DarkMagic
 
         public static bool GetButtonUp(string buttonName)
         {
+            if (TryGetCustomButton(buttonName, out var custom))
+                return custom.up;
+
     #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             return GetButtonNew(buttonName, mode: 2);
     #else
@@ -130,6 +142,9 @@ namespace DarkMagic
 
         public static float GetAxis(string axisName)
         {
+            if (TryGetCustomAxis(Axes, axisName, out var custom))
+                return custom;
+
     #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             return GetAxisNew(axisName, raw: false);
     #else
@@ -146,6 +161,9 @@ namespace DarkMagic
 
         public static float GetAxisRaw(string axisName)
         {
+            if (TryGetCustomAxis(AxesRaw, axisName, out var custom))
+                return custom;
+
     #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             return GetAxisNew(axisName, raw: true);
     #else
@@ -162,6 +180,50 @@ namespace DarkMagic
 
         public static string[] GetJoystickNames()
             => InputSystemBridge.TryJoystickNames(out var v) ? v : UnityEngine.Input.GetJoystickNames();
+
+        private static bool TryGetCustomButton(
+            string name,
+            out (bool held, bool down, bool up) value
+        )
+        {
+            value = default;
+            return !string.IsNullOrWhiteSpace(name)
+                && Buttons.TryGetValue(name, out var provider)
+                && provider != null
+                && TryInvoke(provider, out value);
+        }
+
+        private static bool TryGetCustomAxis(
+            Dictionary<string, Func<float>> mappings,
+            string name,
+            out float value
+        )
+        {
+            value = 0f;
+            return !string.IsNullOrWhiteSpace(name)
+                && mappings.TryGetValue(name, out var provider)
+                && provider != null
+                && TryInvoke(provider, out value);
+        }
+
+        private static bool TryInvoke<T>(Func<T> provider, out T value)
+        {
+            try
+            {
+                value = provider();
+                return true;
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[I] Custom input mapping failed: {exception.Message}");
+#else
+                _ = exception;
+#endif
+                value = default;
+                return true;
+            }
+        }
 
         // ============================================================
         // Input System Reflection Bridge

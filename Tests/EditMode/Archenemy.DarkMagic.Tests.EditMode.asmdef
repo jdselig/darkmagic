@@ -3,6 +3,7 @@
   "rootNamespace": "DarkMagic.Tests",
   "references": [
     "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.Input",
     "Archenemy.DarkMagic.Stats",
     "Archenemy.DarkMagic.StateMachine",
     "Archenemy.DarkMagic.U",
