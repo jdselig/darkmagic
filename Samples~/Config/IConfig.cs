@@ -3,7 +3,7 @@ using DarkMagic;
 
 /// <summary>
 /// IConfig: optional overrides for I's default Buttons/Axes.
-/// Import via Package Manager → V → Samples → Import "Config".
+/// Import via Package Manager → DarkMagic → Samples → Import "Config".
 /// </summary>
 public static class IConfig
 {

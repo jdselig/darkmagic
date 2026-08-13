@@ -40,7 +40,7 @@ Texture2D:
   m_ColorSpace: 1
   m_PlatformBlob: 
   image data: 1
-  _typelessdata: cd
+  _typelessdata: 00
   m_StreamData:
     serializedVersion: 2
     offset: 0
@@ -82,10 +82,10 @@ MonoBehaviour:
     m_StrikethroughThickness: 6.591797
     m_TabWidth: 25
   m_Material: {fileID: 728823376837952179}
-  m_SourceFontFileGUID: d42614986929a4ffd880ae8dfeb1712a
+  m_SourceFontFileGUID: d4660d8703dbb46db81b5cd81bc017d1
   m_CreationSettings:
     sourceFontFileName: 
-    sourceFontFileGUID: d42614986929a4ffd880ae8dfeb1712a
+    sourceFontFileGUID: d4660d8703dbb46db81b5cd81bc017d1
     faceIndex: 0
     pointSizeSamplingMode: 0
     pointSize: 90
@@ -102,7 +102,7 @@ MonoBehaviour:
     fontStyleModifier: 0
     renderMode: 4165
     includeFontFeatures: 0
-  m_SourceFontFile: {fileID: 12800000, guid: d42614986929a4ffd880ae8dfeb1712a, type: 3}
+  m_SourceFontFile: {fileID: 12800000, guid: d4660d8703dbb46db81b5cd81bc017d1, type: 3}
   m_SourceFontFilePath: 
   m_AtlasPopulationMode: 1
   InternalDynamicOS: 0

@@ -1,0 +1,6 @@
+<linker>
+  <!-- U installs a package fallback only when the project has no TMP Settings asset. -->
+  <assembly fullname="Unity.TextMeshPro">
+    <type fullname="TMPro.TMP_Settings" preserve="all" />
+  </assembly>
+</linker>

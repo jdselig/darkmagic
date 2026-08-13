@@ -14,6 +14,7 @@ namespace DarkMagic
     {
         [SerializeField] private List<Stat> _stats = new();
         private readonly Dictionary<string, Stat> _byKey = new(StringComparer.OrdinalIgnoreCase);
+        [NonSerialized] private int _indexedStatCount = -1;
 
         public IReadOnlyList<Stat> All => _stats;
 
@@ -30,10 +31,10 @@ namespace DarkMagic
         /// </summary>
         public void Add(Stat s)
         {
-            if (s == null) return;
+            if (s == null || _stats.Contains(s)) return;
 
             _stats.Add(s);
-            ReindexStat(s);
+            _indexedStatCount = -1;
         }
 
         /// <summary>
@@ -47,9 +48,6 @@ namespace DarkMagic
             return s;
         }
 
-        /// <summary>
-        /// Indexer sugar: stats["HP"] or stats["Strength"].
-        /// </summary>
         /// <summary>
         /// Indexer sugar: stats["HP"] or stats["Strength"].
         /// Setter exists so compound assignments like stats["HP"] -= 10 compile.
@@ -71,7 +69,10 @@ namespace DarkMagic
                 if (!_stats.Contains(value))
                     Add(value);
                 else
+                {
                     ReindexStat(value);
+                    _indexedStatCount = _stats.Count;
+                }
             }
         }
 
@@ -80,13 +81,16 @@ namespace DarkMagic
         public void SetBase(string nameOrAbbr, int value)
         {
             var s = GetOrCreate(nameOrAbbr);
-            s.Base = value;
-            s.Remaining = Mathf.Min(s.Remaining, s.Base + s.TempModifiers + s.EquipmentModifiers);
+            if (s.Base != value)
+                s.ModifyBase(value - s.Base);
         }
 
         public void AddTemp(string nameOrAbbr, int amount) => GetOrCreate(nameOrAbbr).ModifyTemp(amount);
 
         public void AddBase(string nameOrAbbr, int amount) => GetOrCreate(nameOrAbbr).ModifyBase(amount);
+
+        public void AddEquipment(string nameOrAbbr, int amount) =>
+            GetOrCreate(nameOrAbbr).ModifyEquipment(amount);
 
         public void Refresh(bool force = false)
         {
@@ -106,11 +110,6 @@ namespace DarkMagic
         }
 
         /// <summary>
-        /// Creates a stat if it doesn't exist. If you pass "Strength" it will use "Strength" as name and also as abbreviation.
-        /// For better naming, create stats explicitly with name+abbr.
-        /// </summary>
-
-        /// <summary>
         /// Typed StatBlock pattern: in a derived class, declare public Stat fields (HP, STR, etc.)
         /// then call AutoRegisterFields() in the derived constructor to register them into the block.
         /// </summary>
@@ -127,6 +126,11 @@ namespace DarkMagic
                     Add(s);
             }
         }
+
+        /// <summary>
+        /// Creates a stat if it doesn't exist. The key becomes both its name and abbreviation.
+        /// For friendlier labels, create the Stat explicitly with a name and abbreviation.
+        /// </summary>
         public Stat GetOrCreate(string nameOrAbbr, int initial = 0)
         {
             var s = Get(nameOrAbbr);
@@ -139,11 +143,12 @@ namespace DarkMagic
 
         private void EnsureIndex()
         {
-            if (_byKey.Count > 0 && _byKey.Count >= _stats.Count * 2) return;
+            if (_indexedStatCount == _stats.Count) return;
 
             _byKey.Clear();
             foreach (var s in _stats)
                 ReindexStat(s);
+            _indexedStatCount = _stats.Count;
         }
 
         private void ReindexStat(Stat s)

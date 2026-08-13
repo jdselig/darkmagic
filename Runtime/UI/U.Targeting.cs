@@ -146,8 +146,16 @@ namespace DarkMagic
                 CancellationToken cancellationToken = default)
             {
                 rules ??= TargetRules.Default;
+                bool previousAllowAll = rules.AllowAll;
                 rules.AllowAll = all;
-                return await SelectMany(targets, TargetMode.UpTo, count: int.MaxValue, filter: filter, rules: rules, camera: camera, cancellationToken: cancellationToken);
+                try
+                {
+                    return await SelectMany(targets, TargetMode.UpTo, count: int.MaxValue, filter: filter, rules: rules, camera: camera, cancellationToken: cancellationToken);
+                }
+                finally
+                {
+                    rules.AllowAll = previousAllowAll;
+                }
             }
 
             public static async Awaitable<Result<IReadOnlyList<Transform>>> SelectMany(
@@ -170,23 +178,9 @@ namespace DarkMagic
                 Camera camera = null,
                 CancellationToken cancellationToken = default)
             {
-                EnsureSystem();
                 rules ??= TargetRules.Default;
 
                 if (targets == null || targets.Count == 0)
-                    return Result<IReadOnlyList<Transform>>.Canceled();
-
-                camera ??= Camera.main;
-                if (camera == null) camera = Camera.current;
-                if (camera == null)
-                {
-#if UNITY_6000_0_OR_NEWER || UNITY_2022_2_OR_NEWER
-                    camera = UnityEngine.Object.FindAnyObjectByType<Camera>();
-#else
-                    camera = UnityEngine.Object.FindObjectOfType<Camera>();
-#endif
-                }
-                if (camera == null)
                     return Result<IReadOnlyList<Transform>>.Canceled();
 
                 // Filter list (global + per-call)
@@ -211,6 +205,20 @@ namespace DarkMagic
                 // Special modes
                 if (mode == TargetMode.All)
                     return Result<IReadOnlyList<Transform>>.Ok(list);
+
+                EnsureSystem();
+                camera ??= Camera.main;
+                if (camera == null) camera = Camera.current;
+                if (camera == null)
+                {
+#if UNITY_6000_0_OR_NEWER || UNITY_2022_2_OR_NEWER
+                    camera = UnityEngine.Object.FindAnyObjectByType<Camera>();
+#else
+                    camera = UnityEngine.Object.FindObjectOfType<Camera>();
+#endif
+                }
+                if (camera == null)
+                    return Result<IReadOnlyList<Transform>>.Canceled();
 
                 // Arrow UI marker
                 var marker = CreateDefaultMarker(rules.MarkerFontSize);
@@ -550,10 +558,9 @@ namespace DarkMagic
                 {
                     var img = rt.gameObject.AddComponent<Image>();
                     img.sprite = UConfig.TargetMarkerSprite;
-                img.color = UConfig.TargetMarkerColor;
-                img.rectTransform.localScale = new Vector3(1f, UConfig.TargetMarkerScaleY, 1f);
+                    img.color = UConfig.TargetMarkerColor;
+                    img.rectTransform.localScale = new Vector3(1f, UConfig.TargetMarkerScaleY, 1f);
                     img.preserveAspect = true;
-                    img.color = UConfig.TextColor;
                     return rt;
                 }
 

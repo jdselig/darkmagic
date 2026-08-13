@@ -1,16 +1,32 @@
 {
   "name": "com.archenemy.darkmagic",
-  "version": "3.10.11",
+  "version": "3.11.0",
   "displayName": "DarkMagic",
-  "description": "A tiny, DX-first Unity toolkit: V (events), S (state), W (Awaitable helpers), I (Input wrapper), X (utilities), A (animation awaitables), and U (code-first UI).",
+  "description": "A student-friendly Unity toolkit for events, state, Awaitables, input, utilities, animation, code-first UI, targeting, menu flow, and JRPG-style stats.",
   "unity": "6000.3",
   "author": {
     "name": "Archenemy Games"
   },
+  "keywords": [
+    "education",
+    "events",
+    "input",
+    "jrpg",
+    "state-machine",
+    "stats",
+    "ui"
+  ],
+  "documentationUrl": "https://github.com/jdselig/darkmagic#readme",
+  "changelogUrl": "https://github.com/jdselig/darkmagic/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/jdselig/darkmagic/blob/main/LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jdselig/darkmagic.git"
+  },
   "samples": [
     {
       "displayName": "Config",
-      "description": "VConfig, SConfig, WConfig, and IConfig in one folder (recommended starting point).",
+      "description": "V, S, W, I, U, and typed Stats config examples in one classroom-friendly folder.",
       "path": "Samples~/Config"
     },
     {
@@ -20,9 +36,11 @@
     },
     {
       "displayName": "UI Starter",
-      "description": "UConfig + example scripts for banners, dialogue, choices, and HUD display.",
+      "description": "Zero-config banners, dialogue, choices, and reactive HUD examples.",
       "path": "Samples~/UIStarter"
     }
   ],
-  "dependencies": {}
+  "dependencies": {
+    "com.unity.ugui": "2.0.0"
+  }
 }

@@ -51,7 +51,7 @@ namespace DarkMagic
             return opts;
         }
         // ============================================================
-        // Public API (v1)
+        // Public API
         // ============================================================
         public static async Awaitable<Result<bool>> PopBanner(
             string text,
@@ -252,81 +252,6 @@ namespace DarkMagic
             await panel.FadeOut(CancellationToken.None);
             panel.ReturnToPool(PopupKind.Dialogue);
             return new Result<bool>(true, false);
-        }
-        // ------------------------------------------------------------
-        // Outcomes (floating numbers / JRPG combat text)
-        // ------------------------------------------------------------
-        /// <summary>
-        /// Pops a floating outcome number near a world-space target (JRPG-style damage/heal text).
-        /// Works with or without await.
-        /// </summary>
-        public static async Awaitable PopOutcome(Transform target, int amount, Color? color = null, int? textSize = null, Camera camera = null)
-            => await PopOutcome(target, amount.ToString(), color: color, textSize: textSize, camera: camera);
-        /// <summary>
-        /// Pops a floating outcome string near a world-space target. Supports any text, e.g. "+999 DEX".
-        /// Works with or without await.
-        /// </summary>
-        public static async Awaitable PopOutcome(Transform target, string text, Color? color = null, int? textSize = null, Camera camera = null)
-        {
-            EnsureSystem();
-            if (target == null) return;
-            var cam = camera != null ? camera : Camera.main;
-            if (cam == null) cam = Camera.current;
-            #if UNITY_6000_0_OR_NEWER || UNITY_2022_2_OR_NEWER
-            if (cam == null) cam = UnityEngine.Object.FindAnyObjectByType<Camera>();
-            #else
-            if (cam == null) cam = UnityEngine.Object.FindObjectOfType<Camera>();
-            #endif
-            if (cam == null) return;
-            var bubble = _outcomePool.GetOrCreate(_sys);
-            bubble.Show(text ?? "",
-                font: _sys.ResolveFont(),
-                fontSize: textSize ?? UConfig.OutcomeFontSize,
-                color: color ?? UConfig.OutcomeColor);
-            // Position in canvas space
-            // Choose an origin point for the popup (student-proof defaults):
-            // 1) Child transform named OutcomeAnchor (if present)
-            // 2) Collider2D/Collider bounds top-center (if present)
-            // 3) Target pivot + world Y offset
-            var worldPos = target.position;
-
-            // 1) Explicit anchor child
-            var anchor = target.Find(UConfig.OutcomeAnchorChildName);
-            if (anchor != null) worldPos = anchor.position;
-            else
-            {
-                // 2) Collider-based top-center
-                var col2d = target.GetComponentInChildren<Collider2D>();
-                if (col2d != null)
-                {
-                    var b = col2d.bounds;
-                    worldPos = new Vector3(b.center.x, b.max.y, b.center.z);
-                }
-                else
-                {
-                    var col = target.GetComponentInChildren<Collider>();
-                    if (col != null)
-                    {
-                        var b = col.bounds;
-                        worldPos = new Vector3(b.center.x, b.max.y, b.center.z);
-                    }
-                    else
-                    {
-                        // 3) Pivot + configurable world offset
-                        worldPos += Vector3.up * UConfig.OutcomeWorldOffsetY;
-                    }
-                }
-            }
-
-            var screen = cam.WorldToScreenPoint(worldPos);
-            bubble.SetScreenPosition(screen, _sys.Canvas);
-            await bubble.AnimateAndRelease(
-                duration: UConfig.OutcomeDuration,
-                risePx: UConfig.OutcomeRisePx,
-                bouncePx: UConfig.OutcomeBouncePx,
-                scalePop: UConfig.OutcomeScalePop,
-                pool: _outcomePool
-            );
         }
         public static async Awaitable<Result<string>> PopChoice(
             string prompt,
@@ -942,6 +867,7 @@ namespace DarkMagic
         {
             if (_initialized)
                 return;
+            EnsureTMPSettings();
             UConfig.ApplyUserOverrides();
             UConfig.ApplyStylePreset();
             _sys = new UISystem();
@@ -950,6 +876,22 @@ namespace DarkMagic
             _display = new DisplaySystem(_sys);
             _history = new HistoryRing(UConfig.HistoryMax);
             _initialized = true;
+        }
+
+        private static void EnsureTMPSettings()
+        {
+            var instanceField = typeof(TMP_Settings).GetField(
+                "s_Instance",
+                System.Reflection.BindingFlags.NonPublic
+                    | System.Reflection.BindingFlags.Static
+            );
+            if (instanceField == null || instanceField.GetValue(null) != null)
+                return;
+
+            var settings = Resources.Load<TMP_Settings>("TMP Settings")
+                ?? Resources.Load<TMP_Settings>("DarkMagic/TMP Settings");
+            if (settings != null)
+                instanceField.SetValue(null, settings);
         }
         private static string Clamp(string s, int max)
         {
@@ -2626,115 +2568,6 @@ namespace DarkMagic
                 _inst = go.AddComponent<URunner>();
             }
             private void Update() => OnUpdate?.Invoke();
-        }
-        // ------------------------------------------------------------
-        // Outcome pool + animation
-        // ------------------------------------------------------------
-        private sealed class OutcomePool
-        {
-            private readonly Stack<OutcomeBubble> _pool = new();
-            public OutcomeBubble GetOrCreate(UISystem sys)
-            {
-                while (_pool.Count > 0)
-                {
-                    var b = _pool.Pop();
-                    if (b != null) return b;
-                }
-                return new OutcomeBubble(sys);
-            }
-            public void Return(OutcomeBubble b)
-            {
-                if (b == null) return;
-                _pool.Push(b);
-            }
-        }
-        private sealed class OutcomeBubble
-        {
-            private readonly GameObject _go;
-            private readonly RectTransform _rt;
-            private readonly CanvasGroup _cg;
-            private readonly TMP_Text _text;
-            private readonly RectTransform _rootRect;
-            public OutcomeBubble(UISystem sys)
-            {
-                // Root under the U canvas
-                _go = new GameObject("U_Outcome", typeof(RectTransform), typeof(CanvasGroup));
-                _rt = _go.GetComponent<RectTransform>();
-                _cg = _go.GetComponent<CanvasGroup>();
-                _rt.SetParent(sys.Root.transform, false);
-                _rootRect = sys.Root.GetComponent<RectTransform>();
-                _rt.anchorMin = new Vector2(0.5f, 0.5f);
-                _rt.anchorMax = new Vector2(0.5f, 0.5f);
-                _rt.pivot = new Vector2(0.5f, 0.5f);
-                _rt.sizeDelta = new Vector2(10, 10);
-                _cg.alpha = 0f;
-                _cg.interactable = false;
-                _cg.blocksRaycasts = false;
-                var textGO = new GameObject("Text", typeof(RectTransform));
-                var textRT = (RectTransform)textGO.transform;
-                textRT.SetParent(_go.transform, false);
-                textRT.anchorMin = new Vector2(0.5f, 0.5f);
-                textRT.anchorMax = new Vector2(0.5f, 0.5f);
-                textRT.pivot = new Vector2(0.5f, 0.5f);
-                textRT.anchoredPosition = Vector2.zero;
-                _text = UISystem.AddTMP(textGO, sys.ResolveFont(), UConfig.OutcomeFontSize, UConfig.OutcomeColor, TextAlignmentOptions.Center);
-            }
-            public void Show(string text, TMP_FontAsset font, int fontSize, Color color)
-            {
-                _go.SetActive(true);
-                _cg.alpha = 1f;
-                if (font != null) _text.font = font;
-                _text.fontSize = fontSize;
-                _text.color = color;
-                _text.text = text;
-                _text.ForceMeshUpdate();
-                // Size to preferred values (with a sane max)
-                var pref = _text.GetPreferredValues(text);
-                _text.rectTransform.sizeDelta = new Vector2(Mathf.Min(pref.x + 8f, 800f), Mathf.Min(pref.y + 8f, 120f));
-            }
-            public void SetScreenPosition(Vector3 screen, Canvas canvas)
-            {
-                var cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_rootRect, screen, cam, out var local))
-                    return;
-
-                // Clamp inside the root rect so numbers don't appear off-screen.
-                float pad = UConfig.OutcomeCanvasPaddingPx;
-                var half = _rootRect.rect.size * 0.5f;
-                local.x = Mathf.Clamp(local.x, -half.x + pad, half.x - pad);
-                local.y = Mathf.Clamp(local.y, -half.y + pad, half.y - pad);
-
-                local += new Vector2(UConfig.OutcomeOffsetX, UConfig.OutcomeOffsetY);
-                _rt.anchoredPosition = local;
-            }
-            public async Awaitable AnimateAndRelease(float duration, float risePx, float bouncePx, float scalePop, OutcomePool pool)
-            {
-                float t = 0f;
-                var start = _rt.anchoredPosition;
-                var baseScale = Vector3.one;
-                // Pop scale at start
-                _rt.localScale = baseScale * scalePop;
-                while (t < duration)
-                {
-                    t += Time.deltaTime;
-                    float u = Mathf.Clamp01(t / duration);
-                    // Ease up, with a little bounce that damps out
-                    float ease = 1f - Mathf.Pow(1f - u, 3f);
-                    float bounce = Mathf.Sin(u * Mathf.PI * 2f) * bouncePx * (1f - u);
-                    _rt.anchoredPosition = start + new Vector2(0f, ease * risePx + bounce);
-                    // Scale settles to 1
-                    _rt.localScale = Vector3.Lerp(baseScale * scalePop, baseScale, u);
-                    // Fade near end
-                    if (u > 0.65f)
-                        _cg.alpha = Mathf.InverseLerp(1f, 0.65f, u);
-                    await Awaitable.NextFrameAsync();
-                }
-                _go.SetActive(false);
-                _cg.alpha = 0f;
-                _rt.anchoredPosition = start;
-                _rt.localScale = baseScale;
-                pool.Return(this);
-            }
         }
     }
 }

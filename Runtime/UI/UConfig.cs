@@ -212,6 +212,8 @@ namespace DarkMagic
                 Debug.LogWarning(
                     "[DarkMagic/U] Failed to apply UConfigUser overrides: " + ex.Message
                 );
+#else
+                _ = ex;
 #endif
             }
         }

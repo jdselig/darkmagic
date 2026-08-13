@@ -1,1441 +1,289 @@
 # DarkMagic
-### Making Unity better, by any means necessary 😈
 
----
+DarkMagic is a student-friendly Unity helper package by John Selig. It keeps common game-dev code readable, low-ceremony, and easy to teach while leaving advanced paths available when a project grows.
 
-## Quickstart (Unity Package Manager)
+Current version: **3.11.0**
 
-1) **Add the package from Git URL**
+Unity support: **6.3, 6.4, and 6.5+**
 
-In Unity: **Window → Package Manager → + → Add package from git URL...**
+Verified with: **Unity 6000.5.8f1**
 
-Paste:
+## Install
+
+In Unity, open **Window → Package Manager → + → Add package from Git URL** and enter:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.9.4
+https://github.com/jdselig/darkmagic.git#v3.11.0
 ```
 
-2) **Import Samples**
-- In Package Manager, select **DarkMagic**
-- Expand **Samples**
-- Import **Config** (and **UI Starter** / **Input Starter** if you want the optional starters)
+For local package development, add this to the consuming project’s `Packages/manifest.json`:
 
-Then copy the imported **Config** folder into your project’s `Assets/` folder (so it becomes `Assets/Config/...`).
+```json
+"com.archenemy.darkmagic": "file:/absolute/path/to/darkmagic"
+```
 
-You can then delete the Samples folder if you wish.
+DarkMagic includes its own dynamic TMP fonts and minimal fallback settings. Students do not need to import TMP Essential Resources before using `U`, though a project can still provide its own TMP settings or set `UConfig.FontAsset`.
 
-3) **TMP Essentials (UI module)**
-If you see a TMP prompt, click **Import TMP Essentials**.
-If you don’t get a prompt, but UI text looks missing, go to:
-**Window → TextMeshPro → Import TMP Essential Resources**.
+## The map
 
-4) **Input System (I module)**
-`I` uses the **New Input System** under the hood.
-Unity 6.3 and later should set this up automatically.
-If your project doesn’t have it enabled, install/enable **Input System** and set:
-**Project Settings → Player → Active Input Handling → Input System Package (New)** (or **Both**).
+| Module | Purpose | First API to learn |
+|---|---|---|
+| `V` | Type-based events | `V.Broadcast<T>()`, `this.On<T>()` |
+| `S` / `StateMachine` | Small per-object state machines | `this.CreateStateMachine()` |
+| `W` | Unity Awaitable helpers | `await this.Seconds(1)` |
+| `I` | Input System/legacy-friendly input | `I.GetButtonDown("Jump")` |
+| `X` | Vector and Transform sugar | `transform.SetPosY(2)` |
+| `A` | Awaitable animation playback | `await animator.PlayAndWait("Attack")` |
+| `U` | Code-first UI | `U.PopBanner`, `U.PopDialogue`, `U.PopChoice` |
+| `U.Target` | JRPG-style target selection | `await U.Target.Select(enemies)` |
+| `U.Flow` | Nested menus and command payloads | `await U.Flow.Pick<T>(menu)` |
+| Stats | JRPG-friendly stats | `Stat`, `StatBlock` |
 
-That’s it. You can now use:
-- `V` (events), `StateMachine` (states), `W` (awaitable helpers), `I` (inputs), `U` (UI), `X` (utilities).
+Focused guides:
 
-**DarkMagic** is a tiny, DX-first toolkit for prototyping in Unity:
-- A strongly-typed event bus (**V**) where events are **types**
-- A simple, flexible state machine (**S**)
+- [Events (`V`)](Documentation~/V.md)
+- [State machines (`S`)](Documentation~/S.md)
+- [Awaitables (`W`)](Documentation~/W.md)
+- [Input (`I`)](Documentation~/I.md)
+- [UI, targeting, and menu flow (`U`)](Documentation~/U.md)
+- [Stats](Documentation~/Stats.md)
+- [Battle workflow](Documentation~/Battle.md)
+- [Testing and package validation](Documentation~/Testing.md)
 
-Designed for students and rapid iteration: minimal ceremony, helpful guardrails.
+## Five-minute start
 
----
+### Events
 
-## Cheat Sheet
-
-| I want to… | Use this |
-|---|---|
-| Broadcast an event | `V.Broadcast<MyEvent>()` / `V.Broadcast<MyEvent, int>(42)` |
-| Listen for an event (auto-unsub) | `V.On<MyEvent, int>(x => {...}, owner: this)` |
-| Enter a state | `SM.Enter<GameStates.Battle>()` |
-| Check current state | `SM.Is<GameStates.Battle>()` |
-| Wait 1 second (auto-cancel with owner) | `await W.With(this).Seconds(1f);` |
-| Run an async loop tied to an owner | `W.Run(this, async ct => { ... });` |
-| Read input (old-school API) | `I.GetAxis("Horizontal")`, `I.GetKeyDown(KeyCode.Space)` |
-| Pop a dialogue | `await U.PopDialogue("Hello");` |
-| Pop a choice | `var r = await U.PopChoice("Continue?", "Yes", "No");` |
-| Screen transition | `await U.TransitionOut(U.TransitionStyle.Fade);` |
-| HUD text that updates automatically | `U.Display(() => $"SCORE: {score}");` |
-| Log once | `LogOnce("Hello");` |
-
-## The DarkMagic Map
-
-Use these three ideas to keep your brain tidy:
-
-1) **V**: *What happened?* (events)
-2) **S**: *What mode are we in?* (state)
-3) **W**: *Wait for time/frames/conditions* (async helpers)
-4) **I**: *Input, old-school style* (Input System wrapper)
-5) **X**: *Tiny utilities* (vectors/transforms)
-6) **A**: *Animation awaitables* (Animator helpers)
-7) **U**: *Code-first UI* (banners, dialogue, choices, reactive displays)
-
-**W** is optional: a safe async runner + tracing.
-
-> Tip: After importing the **Config** sample, copy the **Config** folder into your project’s `Assets/` so you can edit the configs safely.
-
-
-# Event Bus (V)
-
-## Quick Start
-
-Make sure you added the Samples/Config files as mentioned above!
-
-### Define events (in VConfig.cs)
 ```csharp
-public sealed class GameStart : V.Event { }
 public sealed class PlayerDamaged : V.Event<int> { }
-public sealed class MyCoolNewEvent : V.Event<string> { }
-```
 
-### Broadcast
-```csharp
-V.Broadcast<GameStart>();
-V.Broadcast<PlayerDamaged>(12);
-
-// or, if you're feeling dramatic:
-this.Yell<PlayerDamaged>(12);
-```
-
-### Listen
-```csharp
-this.On<GameStart>(() => Debug.Log("starting..."));
-
-this.On<PlayerDamaged>(dmg => Debug.Log($"{dmg} damage!"));
-```
-
-### Once
-```csharp
-this.Once<GameStart>(() => Debug.Log("first start only"));
-this.Once<PlayerDamaged>(dmg => Debug.Log($"first hit: {dmg}"));
-```
-
-### 2–3 payload events
-```csharp
-public sealed class ItemStolen : V.Event<Item, Character, Character> { }
-
-V.Broadcast<ItemStolen>(item, stealer, stolenFrom);
-
-this.On<ItemStolen>((item, stealer, stolenFrom) =>
+public class PlayerView : MonoBehaviour
 {
-    Debug.Log($"{stealer} stole {item} from {stolenFrom}");
-});
-```
-
----
-
-# State Machine (S)
-
-A **V-style** state machine:
-- No hierarchy
-- States are **types** (usually nested under `S.*`)
-- `Enter`, `OnEnter`, `OnExit`, `OnChange`
-- Locks (`Lock`, `LockTo`)
-- Guardrails (warnings) + trace logs (Editor/Dev builds only)
-
-## Quick Start
-
-Package Manager → **V** → **Samples** → Import **“VStateConfig”**
-
-This adds `SConfig.cs`, where students:
-- toggle state trace + warnings
-- define state types in `S`
-
-### Define states (in SConfig.cs)
-```csharp
-public static   class S
-{
-    public static class Player
+    void Start()
     {
-        public readonly struct Idle { }
-        public readonly struct Falling { }
+        this.On<PlayerDamaged>(damage => Debug.Log($"Took {damage}!"));
     }
 }
+
+V.Broadcast<PlayerDamaged>(12);
 ```
 
-## Use it in a MonoBehaviour
+Listeners attached with `this.On` stop automatically when their Unity owner is destroyed.
 
-In Start or Awake:
-`S = this.CreateStateMachine();`
-
-To get the clean syntax `S.Enter<...>()`, you can also inherit from `StateBehaviour`.
+### State
 
 ```csharp
-using UnityEngine;
-
-public class PlayerController : VStateBehaviour
+public static class PlayerStates
 {
+    public sealed class Idle { }
+    public sealed class Attacking { }
+}
+
+public class Player : MonoBehaviour
+{
+    StateMachine state;
+
     void Awake()
     {
-        S.Enter<S.Player.Idle>();
-
-        S.OnEnter<S.Player.Falling>(() => Debug.Log("weeeee"));
-        S.OnExit<S.Player.Falling>(() => Debug.Log("landed"));
-        S.OnChange((from, to) => Debug.Log($"{from?.Name ?? "(none)"} -> {to.Name}"));
+        state = this.CreateStateMachine();
+        state.StartIn<PlayerStates.Idle>();
     }
 
-    void Update()
-    {
-        if (!IsGrounded())
-            S.Enter<S.Player.Falling>();
-    }
-
-    bool IsGrounded() => true;
+    public void Attack() => state.Go<PlayerStates.Attacking>();
 }
 ```
 
-## State changes as V events (optional)
-
-Every transition broadcasts:
-- `V.StateChanged` (anything, anywhere)
-- `V.StateChanged<S.Player>` (only states nested under `S.Player`)
-
-Listen like:
+### Awaitables
 
 ```csharp
-this.On<V.StateChanged<S.Player>>(e =>
+async Awaitable Start()
 {
-    Debug.Log($"Player state: {e.From?.Name ?? "(none)"} -> {e.To?.Name}");
-});
+    await this.Seconds(1f); // cancels if this component is destroyed
+    Debug.Log("One second later");
+}
 ```
 
-Or the sugar wrapper:
+For safe fire-and-forget work:
 
 ```csharp
-this.OnStateChanged<S.Player>(e => Debug.Log("Player state changed!"));
+this.Run(async () =>
+{
+    await this.Seconds(1f);
+    Debug.Log("Done");
+}, name: "Example");
 ```
 
----
-
-
----
-
-
----
-
-# W (Awaitable helpers)
-
-Unity’s `Awaitable` is already great. **W** just makes it **faster to type** and **harder to mess up**.
-
-> These helpers are from this package (extension methods), not Unity built-ins.
-
-## Wait helpers (auto-cancel on destroy)
-
-```csharp
-await this.Seconds(1f);
-await this.NextFrame();
-await this.EndOfFrame();
-await this.FixedUpdate();
-```
-
-## Wait until / while
-
-```csharp
-await this.Until(() => isGrounded);
-await this.While(() => !isGrounded);
-```
-
-## Safe fire-and-forget
-
-If you truly want to start something and not await it:
-
-```csharp
-this.Seconds(2f).Then(() => Debug.Log("two seconds later")).Forget(this);
-```
-
-Or:
-
-```csharp
-SomeAsync().Forget(this);
-```
-
-`Forget`:
-- ignores cancellations
-- logs exceptions (instead of silently swallowing them)
-
-## Then (tiny continuation)
-
-```csharp
-await this.Seconds(1f).Then(() => Debug.Log("done"));
-```
-
-## Timeout
-
-Timeout returns `true` if the awaitable completed before the timeout, otherwise `false`.
-
-```csharp
-bool ok = await this.Until(() => ready).Timeout(2f, W.TokenFor(this));
-if (!ok) Debug.LogWarning("timed out waiting for ready");
-```
-
-## Await.All / Await.Any
-
-```csharp
-await Await.All(
-    this.Seconds(1f),
-    this.Seconds(2f)
-);
-
-int first = await Await.Any(
-    this.Seconds(1f),
-    this.Seconds(2f)
-);
-// first == 0 means the 1-second wait finished first
-```
-
-Notes:
-- `All` is straightforward.
-- `Any` is implemented with a lightweight polling runner (Unity Awaitable doesn't provide a built-in WhenAny).
-
-> Tip: Start with **W**. If you want extra features like tracing + a safe runner, use **W** below.
-
-
-
----
-
-# Input (I)
-## What I is
-
-`I` is a **tiny wrapper** that lets you write *old-school Input code* while keeping you on the **new Input System** when it’s available.
+### Input
 
 ```csharp
 void Update()
 {
-    if (I.GetKeyDown(KeyCode.Space))
-        Debug.Log("Jump!");
+    float horizontal = I.GetAxis("Horizontal");
+    if (I.GetButtonDown("Jump")) Jump();
 }
 ```
 
-## How I works (very specifically)
+Default axes/buttons work with Unity’s Input System or legacy input. Custom mappings can be supplied through `I.Buttons`, `I.Axes`, and `I.AxesRaw`.
 
-`I` tries to read input in this order:
-
-1) **New Input System (preferred)**
-   If the Input System package is present at runtime, `I` reads directly from devices like:
-   - Keyboard
-   - Mouse
-   - Gamepad
-   - Touchscreen
-   It does this via a small **reflection bridge**, so projects without the Input System still compile.
-
-2) **Fallback: legacy `UnityEngine.Input`**
-   If the Input System package is not present, `I` calls the legacy `Input.*` APIs.
-
-### Warning behavior (soft-require)
-
-In **Editor / Development builds**, if `I` ever has to fall back, it logs a warning **once**:
-- “Input System not found, falling back to legacy Input…”
-- Toggle this with `I.WarnOnFallback` (or via `IConfig` in the Config sample).
-
-> In Release builds, no warning is logged.
-
-## What works out of the box (no setup)
-
-### Keys
-```csharp
-I.GetKey(KeyCode.W);
-I.GetKeyDown(KeyCode.Space);
-I.GetKeyUp(KeyCode.Escape);
-I.anyKey;
-I.anyKeyDown;
-```
-
-### Mouse
-```csharp
-I.GetMouseButton(0);
-I.GetMouseButtonDown(0);
-I.GetMouseButtonUp(0);
-
-Vector3 p = I.mousePosition;
-Vector2 wheel = I.mouseScrollDelta;
-```
-
-### Touch (subset)
-```csharp
-int c = I.touchCount;
-if (c > 0)
-{
-    Touch t = I.GetTouch(0);
-}
-```
-
-## “Legacy-style” Buttons & Axes (zero-setup defaults)
-
-The old Input Manager had lots of named mappings (`"Jump"`, `"Horizontal"`, etc).
-The new Input System expects you to define actions in an asset.
-
-To keep prototyping painless, `I` includes **sane defaults** for:
-
-- Buttons: `"Jump"`, `"Fire1"`, `"Fire2"`, `"Submit"`, `"Cancel"`
-- Axes: `"Horizontal"`, `"Vertical"`
-
-Examples:
-```csharp
-float x = I.GetAxis("Horizontal");      // smoothed-ish
-float y = I.GetAxisRaw("Vertical");     // snapped
-
-if (I.GetButtonDown("Jump")) { }
-if (I.GetButton("Fire1")) { }
-```
-
-### Customizing buttons/axes (recommended path)
-
-Use `IConfig` (in the **Config** sample) to override anything:
+### UI
 
 ```csharp
-I.Buttons["Jump"] = () => (
-    I.GetKey(KeyCode.Z),
-    I.GetKeyDown(KeyCode.Z),
-    I.GetKeyUp(KeyCode.Z)
-);
+await U.PopBanner("Battle start!", 1.25f);
+await U.PopDialogue("Welcome, hero.<pbr/>Choose carefully.");
+
+var choice = await U.PopChoice("Your move?", "Fight", "Magic", "Run");
+if (!choice.Cancelled)
+    Debug.Log(choice.Value);
 ```
 
----
-
-## Optional: Input Actions starter sample
-
-If you want a real Input Actions asset (rebinding, nicer gamepad feel, cleaner scaling), import the **Input Starter** sample.
-
-It includes:
-- `V_InputStarter.inputactions` (a small default action map)
-- `InputStarter` component (simple reads like `Move`, `JumpDown`)
-- optional `IInputActionsBridge` (feeds those actions into `I.GetAxis/GetButton`)
-
-### Import
-Package Manager → **V** → **Samples** → Import **Input Starter**
-
-### Use InputStarter
-```csharp
-var input = FindFirstObjectByType<InputStarter>();
-Vector2 move = input.Move;
-if (input.JumpDown) Debug.Log("Jump!");
-```
-
-### Bridge actions into I (optional)
-Add `IInputActionsBridge` to a GameObject (it will auto-find `InputStarter` if left unassigned).
-
-Now your old-school calls can be powered by actions:
-```csharp
-float x = I.GetAxis("Horizontal");
-if (I.GetButtonDown("Jump")) { }
-```
-
-### How to change or update actions
-
-1. Open `V_InputStarter.inputactions` and edit bindings/actions.
-2. Keep the action names the same (`Move`, `Look`, `Jump`, `Fire`, `Sprint`, `Pause`) unless you also update `InputStarter.cs`.
-3. If you rename an action, update `FindAction("Name")` calls in `InputStarter.cs`.
-
-# Async the W Way (W)
-
-**W** is a tiny layer of sugar on Unity's `Awaitable` to make async/await feel like "coroutines, but nicer":
-- **Auto-cancellation**: if you call from a `MonoBehaviour`, waits cancel when it’s destroyed
-- **Run(...)**: a safe fire-and-forget runner that logs exceptions
-- Optional **trace** + **guardrails** (Editor/Dev builds only)
-
-## Quick Start
-
-Package Manager → **V** → **Samples** → Import **“WConfig”**
-
-## Wait helpers
-
-Two styles:
-
-### A) Scoped (explicit)
-```csharp
-await this.W().Seconds(0.5f);
-await this.W().NextFrame();
-await this.W().EndOfFrame();
-await this.W().FixedUpdate();
-```
-
-### B) Direct (shortest)
-```csharp
-await this.Seconds(0.5f);
-await this.NextFrame();
-```
-
-## Wait for a condition
+Reactive HUD text:
 
 ```csharp
-await this.Until(() => isGrounded);
-await this.While(() => !isGrounded);
+U.IDisplayHandle hpDisplay;
+
+void Start() => hpDisplay = U.Display(() => "HP " + stats["HP"].Current);
+void OnDestroy() => hpDisplay?.Dispose();
 ```
 
-## Run: fire-and-forget without silent explosions
+Floating combat text:
 
-```csharp
-this.Run(async (ct) =>
-{
-    await Awaitable.WaitForSecondsAsync(1f, ct);
-    V.Broadcast<PlayerDamaged>(12);
-}, name: "DamageAfterDelay");
-```
-
-Notes:
-- `ct` auto-cancels on destroy (for MonoBehaviours)
-- Exceptions are logged (cancellation is treated as normal)
-
-## Optional: V events for async tracing
-
-When `W.Run` starts/finishes/cancels/fails, it broadcasts:
-- `V.WStarted`
-- `V.WFinished`
-- `V.WCanceled`
-- `V.WFailed`
-
-Example:
-```csharp
-this.On<V.WFailed>(info => Debug.LogError($"Async failed: {info}"));
-```
-
-
-## Common Pitfalls
-
-### A) Subscribing in Update
-Don’t call `this.On(...)` or `S.OnEnter(...)` inside `Update()`.
-That creates duplicates every frame.
-
-✅ Subscribe once in `Awake`, `Start`, or `OnEnable`.
-
-### B) “Immortal” listeners
-If you subscribe using the core API without an owner, it may live forever.
-
-✅ In MonoBehaviours, prefer:
-- `this.On(...)`
-- `this.Once(...)`
-
-### C) Ordering assumptions
-Events and hooks don’t guarantee ordering.
-If you need strict sequencing or frame-perfect timing, use direct calls/state machines/explicit update order.
-
-### D) “It’s firing twice!”
-Most common cause: you subscribed twice. Check your subscription locations.
-
----
-
-## The Three Rules (for students)
-
-1) **Events are “what happened,” not “what to do.”**
-2) **Subscribe once (Awake/Start/OnEnable), never in Update.**
-3) **In MonoBehaviours, use `this.On` / `this.Once` so listeners die cleanly.**
-
-
----
-
-# Utilities (X)
-
-These are small helpers aimed at the most common “wait why can’t I…” moments for new Unity devs.
-
-## Vector SetX / SetY / SetZ (returns a new vector)
-
-```csharp
-transform.position = transform.position.SetY(5f);   // keep X/Z, change Y
-rb.velocity = rb.velocity.SetX(0f);                 // keep Y/Z, change X
-```
-
-Also available:
-- `AddX/AddY/AddZ` for `Vector3`
-
-## Transform helpers (mutate Transform directly)
-
-```csharp
-transform.SetPosY(2f);
-transform.AddPosX(1f);
-transform.ResetLocal();
-
-transform.LookAt2D(target.position); // rotates around Z so +X faces target
-```
-
-
----
-
-# Animation awaitables (A)
-
-Waiting for animations is a classic Unity headache. These helpers let you do it with `await`:
-
-```csharp
-await animator.PlayAndWait("Attack");
-```
-
-Or, if you already started the state:
-
-```csharp
-await A.WaitForAnimation(animator, "Attack");
-```
-
-## Important notes
-
-- `stateName` should match the **Animator STATE name** (or full path), not necessarily the clip name.
-- This waits until:
-  - the Animator is in that state (on the given layer)
-  - `normalizedTime >= 1`
-  - and the Animator is **not** in a transition
-
-## Cancellation (optional)
-
-If you want cancellation, pass a token:
-
-```csharp
-await animator.PlayAndWait("Attack", cancellationToken: token);
-```
-
-
----
-
-# UI (U)
-
-U is a **code-first**, student-friendly UI layer built on **uGUI + TextMeshPro** (TMP required).
-It’s designed for fast prototyping: banners, dialogue, choices/menus, and simple reactive HUD displays.
-
-## Core ideas
-
-- **One modal at a time** (awaitable): `Pop*` methods.
-- **Many displays** at once (persistent HUD): `Display`.
-- **Back/Cancel** is always supported and returns a result object (no exceptions for students).
-- U uses your `I` wrapper for input by default (Enter/Space/Click for confirm; Esc/Backspace/Right-click for cancel).
-
-## Banners
-
-```csharp
-await U.PopBanner("A party of goblins attacks!", placement: U.Placements.TopCenter);
-```
-
-## Dialogue (auto paginated)
-
-```csharp
-await U.PopDialogue( // defaults to left-aligned text
-"Long dialogue text... U will split it into pages and wait for confirm/cancel.");
-```
-
-Pagination is controlled by `UConfig.DialogueMaxCharsPerPage (auto-scales a bit with dialogue font size / modal height)`.
-
-## Choices / Menus
-
-```csharp
-var result = await U.PopChoice("Do you accept this quest?", "Yes", "Nope");
-
-if (!result.Cancelled && result.Value == "Yes")
-{
-    // ...
-}
-```
-
-Menu is just sugar over choice:
-
-```csharp
-var cmd = await U.Menu("Knight", "Fight", "Magic", "Defend", "Item");
-```
-
-### Result behavior (important)
-
-Every modal returns a `U.Result<T>`:
-
-- `result.Cancelled == true` if the player backed out
-- `result.Value` is the chosen string (when not cancelled)
-
-## Reactive HUD / Displays
-
-If you want text to update automatically, pass a **lambda**:
-
-```csharp
-var scoreHud = U.Display(() => $"SCORE: {score}", placement: U.Placements.TopLeft);
-
-// later
-scoreHud.Dispose(); // removes it
-```
-
-Why a lambda? Because C# can’t “see” which variables were used inside a string after it’s already been evaluated.
-A `Func<string>` lets U re-evaluate the text periodically.
-
-## Hooks (V events)
-
-U broadcasts V events so students can hook sound effects, analytics, etc:
-
-- `U.DialoguePopped` (string: the page text shown)
-- `U.ChoiceMade` (string: the selected option label)
-- `U.ChoiceCanceled` (string: the prompt/title)
-
-Example:
-
-```csharp
-this.On<U.ChoiceMade>(choice => Debug.Log("SFX: click " + choice));
-```
-
-## Styling and defaults (UConfig)
-
-U is opinionated by default, but most knobs live in `UConfig`:
-
-- sizes (banner/dialogue/modal percent of screen)
-- colors
-- max chars per page
-- key mappings
-- optional TMP font (`UConfig.Font`)
-
-Import the **Config** sample and copy `Config/` into `Assets/`, then edit `UConfig.cs`.
-
-
-## Targeting (v1: FF-style cycling)
-
-U.Target lets you select from a list without raycasts (great for turn-based RPGs).
-You provide a list and a way to get each target's Transform.
-
-```csharp
-var target = await U.Target.Single(enemies, e => e.transform);
-if (!target.Cancelled)
-    Debug.Log("Chose: " + target.Value.name);
-```
-
-Keys:
-- Left/Right arrows (or A/D) to cycle targets
-- Confirm / Cancel as usual
-
-
-## Choice icons (optional)
-
-You can pass `U.Option` values with optional sprites:
-
-```csharp
-U.Option fire = new U.Option("Fire", fireSprite);
-U.Option ice  = new U.Option("Ice", iceSprite);
-
-var spell = await U.PopChoice("Magic", fire, ice, "Back");
-```
-
-
-## Menu flow helper (U.Flow)
-
-U.Flow is for **nested menus** (Magic → Spell list → Back) with minimal boilerplate.
-It supports **icons** (via `U.Option`) and optional **descriptions**.
-
-### A) Run: execute immediately (simple)
-
-```csharp
-var root = new U.Flow.Menu("Knight")
-    .Add("Fight", async () => { await U.PopBanner("Fight!"); })
-    .AddSubmenu("Magic", magic =>
-    {
-        magic.Description = label => label switch
-        {
-            "Firewave" => "Hit all enemies.",
-            "Spark" => "Hit one enemy.",
-            _ => ""
-        };
-
-        magic.Add(new U.Option("Firewave", fireIcon), async () => { await U.PopBanner("Firewave!"); });
-        magic.Add(new U.Option("Spark", sparkIcon), async () => { await U.PopBanner("Spark!"); });
-    })
-    .Add("Defend", async () => await U.PopBanner("Defend!"));
-
-await U.Flow.Run(root);
-```
-
-Rules:
-- Selecting an **action** returns you to the current menu (classic JRPG behavior).
-- **Cancel** exits the root menu.
-- In submenus, U.Flow adds **Back** automatically (and Cancel also goes back).
-
-### B) Pick<T>: return a decision payload (advanced)
-
-Use `AddSelect<T>` entries to return a payload you execute later:
-
-```csharp
-// Example: spells are ScriptableObjects (MagicCommand)
-var magicMenu = new U.Flow.Menu("Magic");
-
-foreach (var spell in knownSpells)
-    magicMenu.AddSelect(new U.Option(spell.DisplayName, spell.Icon), spell);
-
-magicMenu.Description = label => knownSpells.Find(s => s.DisplayName == label)?.Description;
-
-var pick = await U.Flow.Pick<MagicCommand>(magicMenu);
-if (!pick.Cancelled)
-{
-    var spell = pick.Value.Payload;
-    // Choose targets, then execute in your battle resolver.
-}
-```
-
-## Targeting: single vs party
-
-Use `U.Target.Party(...)` when an option can target a single enemy OR the whole enemy party:
-
-```csharp
-var t = await U.Target.Party(enemies, e => e.transform);
-
-if (!t.Cancelled)
-{
-    // If the player chose ALL, you'll get the full list back.
-    // If the player chose one enemy, you'll get a list with 1 entry.
-    foreach (var enemy in t.Value)
-        Debug.Log("Hit: " + enemy.name);
-}
-```
-
-
-
----
-
-# Events: Broadcast payload quick note
-
-If you want the very student-friendly syntax:
-
-```csharp
-V.Broadcast<PlayerDamaged>(12);
-```
-
-you must use the **single-generic Broadcast overload** (added in v2.6.1).
-It runtime-validates that `PlayerDamaged : V.Event<int>` and then publishes.
-
-(Older C# rules don’t allow “ ly specifying” generic type arguments, so the previous `Broadcast<TEvent, T>(T payload)` requires writing `Broadcast<PlayerDamaged, int>(12)`.)
-
-
-## Choice descriptions (optional)
-
-If you pass `description: ...`, U will show a small panel under the list and update it as selection changes:
-
-```csharp
-var pick = await U.PopChoice(
-    "Magic",
-    new [] { new U.Option("Firewave"), new U.Option("Spark"), new U.Option("Back") },
-    description: label => label switch
-    {
-        "Firewave" => "Hit all enemies.",
-        "Spark" => "Hit one enemy.",
-        _ => ""
-    }
-);
-```
-
-
-## Input (I): Axis/Button note (Unity 6 default Input System)
-
-If your project uses **Input System Package** mode (Unity 6 default), Unity throws if you call legacy `UnityEngine.Input.GetAxis`.
-
-`I.GetAxis(...)` and `I.GetButton(...)` now do this:
-
-- If Legacy Input Manager is enabled: use the legacy Input Manager.
-- If Legacy Input Manager is disabled: use **Input System** under the hood with a few default legacy-style name mappings.
-
-Default axis mappings:
-- `"Horizontal"` / `"horizontal"`: A/D, Left/Right arrows, Gamepad left stick X, Gamepad dpad X
-- `"Vertical"` / `"vertical"`: W/S, Up/Down arrows, Gamepad left stick Y, Gamepad dpad Y
-- `"Mouse X"`, `"Mouse Y"`: Mouse delta
-
-Default button mappings:
-- `"Jump"`: Space, Gamepad South
-- `"Fire1"`: Mouse0, Gamepad West
-- `"Fire2"`: Mouse1, Gamepad East
-- `"Submit"`: Enter, Gamepad South
-- `"Cancel"`: Escape, Gamepad East
-
-Turn off warnings for unknown names: `IConfig.WARN_ON_FALLBACK = false`.
-
-
-
-### V.On payload tip (why `this.On<MyEvent>(x => ...)` sometimes errors)
-
-In C#, lambdas must convert to a *specific delegate type* (like `Action<int>`). A lambda does **not** automatically convert to `System.Delegate`,
-so this will not compile if the only visible overload is `On<TEvent>(Action handler)`:
-
-```csharp
-this.On<PlayerDamaged>(dmg => { }); // ❌ "Action does not take 1 arguments"
-```
-
-Use one of these (both IL2CPP-safe):
-
-```csharp
-// Option A (recommended): specify the payload type as a 2nd generic arg
-this.On<PlayerDamaged, int>(dmg => { });
-
-// Option B: keep 1 generic arg, but give the lambda an explicit delegate type via V.A<T>()
-this.On<PlayerDamaged>(V.A<int>(dmg => { }));
-```
-
-
-
-### If you see duplicate-definition or ambiguous-call errors after updating
-If Unity reports duplicate or ambiguous members from old file paths, delete the package from `Library/PackageCache/` (or restart Unity), then re-add the package.
-
-
-### V.On payload shorthand options
-
-Sometimes you want the shortest possible listener:
-
-```csharp
-public sealed class PlayerDamaged : V.Event<int> { }
-
-this.On<PlayerDamaged>(dmg =>
-{
-    // dmg is `object` here, cast if needed:
-    int total = 2 + (int)dmg;
-    Debug.Log(total);
-});
-```
-
-V supports three IL2CPP-safe ways to listen to payload events:
-
-- **Option A (strongly typed):** `this.On<MyEvent, int>(x => ...)`
-- **Option B (single generic + helper):** `this.On<MyEvent>(V.A<int>(x => ...))`
-- **Option C (single generic + cast):** `this.On<MyEvent>(x => { var v = (int)x; ... })`  *(uses Action<object> under the hood; value types box)*
-
-
-
-## U (UI)
-
-U is a code-first UI layer built on uGUI + TextMeshPro. It is designed for fast prototyping and JRPG-style menus/dialogue.
-
-### U.PopDialogue
-Shows a dialogue panel (with automatic pagination if needed). Awaiting returns when the player confirms/cancels.
-
-**Simple**
-```csharp
-await U.PopDialogue("A party of goblins attacks!");
-```
-Expected behavior: a dialogue panel appears (default placement), player confirms to dismiss.
-
-**Markup + forced page breaks**
-```csharp
-await U.PopDialogue("<size=48>SPACETEST</size><pbr/>Arrows to move.<br/>Space to shoot.<pbr/>Good luck!");
-```
-- `<br/>` becomes a newline
-- `<pbr/>` forces a new page
-
-**Options**
-```csharp
-await U.PopDialogue(
-    "Hello there.",
-    placement: U.Placements.TopCenter,
-    textColor: Color.cyan,
-    textSize: 32,
-    panelColor: new Color(0,0,0,0.9f)
-);
-```
-
-### U.Display
-Shows HUD text that updates automatically via a `Func<string>`.
-
-**Simple**
-```csharp
-U.Display(() => $"SCORE: {score}");
-```
-
-**Multi-line**
-```csharp
-U.Display(() => $"SCORE: {score}
-LEVEL: {level}
-BOMBS: {bombs}");
-```
-
-### U.Menu
-Menu is a convenience wrapper around `U.PopChoice` for “choose one option” flows.
-
-**Simple**
-```csharp
-var r = await U.Menu("Battle!", "Fight", "Item", "Status", "Run");
-if (!r.Cancelled) Debug.Log($"Picked: {r.Value}");
-```
-
-**No title panel**
-```csharp
-var r = await U.Menu("", "Tackle", "Growl", "Roar");
-```
-If the first arg is empty/whitespace, the title panel is skipped and only the options panel appears.
-
-**Place options panel**
-```csharp
-var r = await U.Menu("Battle!", optionsPlacement: U.Placements.BottomLeft,
-    "Fight","Item","Status","Run");
-```
-
-### U.PopChoice
-PopChoice is the underlying “prompt + options” primitive.
-
-**Simple**
-```csharp
-var r = await U.PopChoice("Continue?", "Yes", "No");
-```
-
-### U.PopBanner
-Banners are short messages.
-
-**Simple**
-```csharp
-await U.PopBanner("Quest updated!");
-```
-
-**Timed**
-```csharp
-await U.PopBanner("Saved!", secondsToLive: 1.5f);
-```
-
-### Pagination + anti-flash note
-U uses pooled panels. To prevent a one-frame “flash” of a previous panel position, panels are made invisible before activation.
-For paginated dialogues, the panel stays visible while text changes, so the invisibility step only runs when the panel was previously inactive.
-
-## Quick logging helpers
-
-```csharp
-V.L("Hello!");     // bold navy
-V.Log("Same");     // alias
-```
-
-(Uses Unity rich-text tags. You can change the color later in `VLog.cs`.)
-
-
-## UConfig: making your changes actually apply
-
-`UConfig` lives inside the package assembly. If you edit the copy in Samples, it won't affect runtime until you copy it into your project.
-
-**Recommended workflow:**
-1) In Package Manager, import the Samples.
-2) Copy `Samples/Config` into your project: `Assets/Config`
-3) Edit **UConfig.cs** inside `Assets/Config`
-
-U will automatically detect `UConfig` and apply matching fields at startup.
-
-### HUD placement / padding
-
-`U.Display(...)` uses `UConfig.DisplayMarginPx` (or your `UConfig.DisplayMarginPx`) as the distance from the screen edge.
-
-
-## U.Placements: how positioning works
-
-U uses `RectTransform` anchors + pivots on the `U_Root` canvas.
-For example `BottomRight` sets:
-
-- `anchorMin/anchorMax = (1, 0)`
-- `pivot = (1, 0)`
-- `anchoredPosition = (-margin, +margin)`
-
-So the panel’s **bottom-right corner** hugs the screen corner, inset by `UConfig.DisplayMarginPx`.
-
-If you ever see UI not hugging the edge, it usually means the parent is not a `RectTransform` (or a different canvas is involved). U now ensures `U_Root` always has a `RectTransform`.
-
-
-## Logging helpers (Log / L)
-
-This package includes tiny logging helpers:
-
-Option A (recommended for teaching): add this once at the top of the file:
-
-```csharp
-using static DarkMagic.Logs;
-```
-
-Then you can write:
-
-```csharp
-Log("Hello!");   // navy
-L("Same thing"); // alias
-Warn("Careful!");
-Error("Nope.");
-LogOnce("Only once!");
-Single("Also only once!");
-```
-
-Option B (no using): call them with the class name:
-
-```csharp
-DarkMagic.Logs.Log("Hello!");
-DarkMagic.Logs.Warn("Careful!");
-DarkMagic.Logs.Error("Nope.");
-```
-
-
-## X extensions (Vector / Transform)
-
-Vector helpers return **new vectors** (because Vector3 is a struct):
-
-```csharp
-transform.position = transform.position.AddZ(10);
-```
-
-Transform helpers actually mutate the transform (recommended for beginners):
-
-```csharp
-transform.AddPosZ(10);
-transform.SetPosX(3);
-```
-
-
-### More logging helpers
-
-```csharp
-Log("Hello!");               // navy
-Warn("Careful!");            // dark orange
-Error("Nope.");              // dark red
-LogOnce("Only once!");       // navy + "SINGLE: " prefix
-Single("Also only once!");   // alias
-```
-
-
-### Timed banners
-
-```csharp
-// Auto-dismiss after 2.5 seconds (returns UResult.Timeout if the timer wins)
-await U.PopBanner("A party of goblins attacks!", 2.5f);
-```
-
-
-## U: Text overrides
-
-All of these support optional overrides:
-
-```csharp
-await U.PopBanner("Hello", textSize: 34, textColor: Color.yellow, textAlign: TextAlignmentOptions.Center);
-await U.PopDialogue( // defaults to left-aligned text
-"Longer text...", textSize: 28);
-var r = await U.PopChoice("Pick one:", textColor: Color.cyan, "Yes", "No");
-```
-
-
-### U Borders + Fades
-
-All U.Pop* panels now have a code-generated border and optional fade.
-
-- Config:
-  - `UConfig.BorderSize`, `UConfig.BorderColor`
-  - `UConfig.PopFadeIn`, `UConfig.PopFadeOut`, `UConfig.PopFadeDuration`
-- Per-call overrides (optional): `borderSize`, `borderColor`
-
-
-### TMP Font Default (JRPG vibe)
-
-DarkMagic ships with a default TMP font asset (Resources path `Default/Default SDF`). U will use this automatically unless you override `UConfig.FontAsset` or you have a TMP project default font set.
-
-
-## U Style Presets
-
-U includes two built-in style presets:
-
-- **JRPG**: FFVI-ish menu blue panels (88% opacity) + bundled JRPG TMP font.
-- **Liberation**: neutral look + bundled Liberation Sans TMP font.
-
-Set it in `UConfig.cs`:
-
-```csharp
-using DarkMagic;
-
-public static class UConfig
-{
-    public static UStylePreset StylePreset = UStylePreset.JRPG;
-}
-```
-
-You can still override `PanelColor`, `BorderColor`, `FontAsset`, etc. Presets only fill in defaults when you haven't explicitly set those values.
-
-
-### PopChoice overload note
-
-If you call `PopChoice` with just strings, use the student-first overload:
-
-```csharp
-var result = await U.PopChoice("Prompt", "Yes", "No");
-```
-
-Advanced overloads also let you pass optional styling params like `textSize:` and `panelColor:`.
-
-
-## Assembly Definitions (asmdef)
-
-DarkMagic is split into small assemblies (Core, V, W, U, Input, StateMachine, Animation, X) to keep Unity Editor recompile times snappy.
-
-## Screen Transitions (scene-style)
-
-DarkMagic U includes simple, code-only screen transitions for scene changes or dramatic moments.
-
-**Out (cover the screen):**
-```csharp
-await U.TransitionOut(U.TransitionStyle.Fade);
-await U.TransitionOut(U.TransitionStyle.DiagonalWipe, duration: 0.5f);
-await U.TransitionOut(U.TransitionStyle.PixelDissolve, duration: 0.6f);
-```
-
-**In (reveal gameplay):**
-```csharp
-await U.TransitionIn(U.TransitionStyle.Fade);
-```
-
-**Wrap an async action (eg scene load):**
-```csharp
-await U.Transition(async () =>
-{
-    // await SceneManager.LoadSceneAsync("Battle");
-}, style: U.TransitionStyle.DiagonalWipe);
-```
-
-Defaults are configurable in `UConfig`:
-- `TransitionColor` (default black)
-- `TransitionDuration`
-- `TransitionSoftness` (diagonal edge softness)
-- `TransitionPixelScale` (dissolve pixel size)
-## Version
-This README matches package version **3.6.6**.
-
-
-### Typed menus (Menu<T>)
-```csharp
-var res = await U.Menu<MagicCommand>(
-    "Choose Your Magic",
-    spells,
-    label: s => s.DisplayName,
-    description: s => s.Description
-);
-if (res.Success) res.Value.Cast();
-```
-
-### Described menus
-```csharp
-// Tuple form
-var r1 = await U.Menu("Choose Your Magic",
-    ("Fire", "Power 10, may burn opponent."),
-    ("Ice", "Power 8, may freeze opponent."));
-
-// Delimiter form
-var r2 = await U.Menu("Choose Your Magic", ":::",
-    "Fire:::Power 10, may burn opponent.",
-    "Ice:::Power 8, may freeze opponent.");
-```
-
-
-### U.PopOutcome (floating combat text)
-
-Pops a JRPG-style floating number (or any text) near a world-space target. Great for damage/heal popups.
-
-**Simple (damage)**
 ```csharp
 U.PopOutcome(targetTransform, 125);
-```
-Expected behavior: white “125” appears near the target, bounces upward, then fades.
-
-**Color override (healing)**
-```csharp
-U.PopOutcome(targetTransform, 50, Color.green);
+U.PopOutcome(targetTransform, "+50 HP", Color.green);
+await U.PopOutcome(targetTransform, "Miss!");
 ```
 
-**Custom text + size (crit)**
+`PopOutcome` chooses its world position in this order:
+
+1. Child named `OutcomeAnchor`.
+2. `Collider2D` top-center.
+3. `Collider` top-center.
+4. Target pivot plus `UConfig.OutcomeWorldOffsetY`.
+
+### Targeting
+
 ```csharp
-U.PopOutcome(targetTransform, "+99999 DEXTERITY", Color.yellow, textSize: 56);
-```
+var target = await U.Target.Select(enemies);
+if (target.Cancelled) return;
 
-This call works with or without `await`. If you `await` it, the await completes when the popup finishes animating.
-
-## U.Target (Targeting)
-
-U.Target provides JRPG-style target selection (list cycling) with optional mouse hover/raycast. It works in both 2D and 3D.
-
-### Select a single target
-
-**Simple (JRPG cycling)**
-```csharp
-var enemies = new List<Transform> { darcula, darcula2 };
-var t = await U.Target.Select(enemies);
-if (!t.Cancelled) Debug.Log($"Target: {t.Value.name}");
-```
-
-**From a group Transform (direct children)**
-```csharp
-var enemyParty = GameObject.Find("EnemyParty").transform;
-var t = await U.Target.Select(enemyParty);
-```
-
-**Typed targets**
-```csharp
-var t = await U.Target.Select<Unit>(
-    enemyUnits,
-    getTransform: u => u.transform,
-    filter: u => u.HP > 0
+var all = await U.Target.SelectMany(enemies, mode: U.TargetMode.All);
+var exact = await U.Target.SelectMany(
+    enemies,
+    mode: U.TargetMode.Exact,
+    count: 2
 );
 ```
 
-### Select multiple targets
-
-TargetMode options:
-- `Single` (default)
-- `All`
-- `UpTo` (choose up to N, confirm early)
-- `Exact` (choose exactly N)
+`Select` supports `Transform` collections, a party parent’s direct children, or typed lists with a filter:
 
 ```csharp
-var all = await U.Target.SelectMany(enemies, mode: U.TargetMode.All);
-
-var upTo3 = await U.Target.SelectMany(enemies, mode: U.TargetMode.UpTo, count: 3);
-
-var exact2 = await U.Target.SelectMany(enemies, mode: U.TargetMode.Exact, count: 2);
+var living = await U.Target.Select(enemyUnits, filter: enemy => enemy.HP > 0);
 ```
 
-### Mouse hover / raycast (optional)
-
-```csharp
-var rules = new U.TargetRules { AllowMouseRaycast = true };
-var t = await U.Target.Select(enemies, rules: rules);
-```
-
-### Default filtering (global)
-
-You can set a global predicate to exclude targets by default (e.g. dead units).
-
-```csharp
-UConfig.TargetIsTargetable = t =>
-    t != null && t.gameObject.activeInHierarchy;
-```
-
-### Target marker overrides (glyph / sprite / prefab)
-
-By default, the marker is a TMP text glyph. If your font doesn’t include certain Unicode characters, use an ASCII-safe glyph:
-
-```csharp
-UConfig.TargetMarkerGlyph = "^";
-UConfig.TargetMarkerScaleY = -1f;
-UConfig.TargetMarkerColor = new Color(1f, 0.88235295f, 0.03137255f, 1f); // #FFE108
-// Optional: force marker to match U's font
-UConfig.TargetMarkerFont = null;
-```
-
-You can override the marker with a Sprite (UI Image), or a Prefab.
-
-**Sprite override**
-```csharp
-UConfig.TargetMarkerSprite = Resources.Load<Sprite>("TargetCursorSprite");
-```
-
-**Prefab override**
-```csharp
-UConfig.TargetMarkerPrefab = Resources.Load<GameObject>("TargetCursorPrefab");
-```
-
-Priority:
-1) Prefab
-2) Sprite
-3) Glyph
-
-### Marker positioning + anchors
-By default the marker appears above the current target. The world point used follows this priority:
-1) Child named `TargetAnchor`
-2) Child named `OutcomeAnchor`
-3) Top of Collider2D/Collider bounds
-4) Pivot + `UConfig.TargetMarkerWorldOffsetY`
-
-You can also add an extra screen-space offset:
-```csharp
-UConfig.TargetMarkerScreenOffset = new Vector2(0, 40);
-```
-
-## Stats (Stat + StatBlock)
-
-DarkMagic stats are intentionally simple: Base + Temp (buff/debuff) + Equipment, with an optional Remaining value for resource stats like HP/MP.
-
-### Stat
-
-```csharp
-var hp = new Stat("Health", "HP", initial: 120, persists: true, isLethal: true);
-hp.Damage(15);
-Debug.Log(hp.Current); // 105
-```
-
-**Syntactic sugar**
-```csharp
-// implicit int conversion
-int hpNow = hp;
-
-// temp buff/debuff (adds to TempModifiers)
-hp += 5;   // buff
-hp -= 10;  // debuff
-
-// base (persistent) changes: uses >> because C# cannot overload a custom '>>>'
-hp >> -4;  // permanent -4 base
-```
-
-### StatBlock
+### Stats
 
 ```csharp
 var stats = new StatBlock(
-    new Stat("Health","HP", 120, persists:true, isLethal:true),
-    new Stat("Strength","STR", 12)
+    new Stat("Health", "HP", 120, persists: true, isLethal: true, isResource: true),
+    new Stat("Strength", "STR", 12)
 );
 
-// lookup by name or abbreviation
-stats["HP"].Damage(10);
-Debug.Log(stats.GetInt("STR"));
+stats["HP"] -= 10;  // resource: damage Remaining
+stats["HP"] += 5;   // resource: heal Remaining
+stats["STR"] += 5;  // normal stat: temporary buff
+
+Debug.Log(stats["HP"].Current);  // 115
+Debug.Log(stats["STR"].Current); // 17
 ```
 
-**Refresh**
+Normal stat `Current` is:
+
+```text
+Base + TempModifiers + EquipmentModifiers
+```
+
+Resource stat `Current` is `Remaining`, capped at that effective maximum.
+
+Named helpers are available when they read better in class:
+
 ```csharp
-stats.Refresh();       // clears TempModifiers; resets non-persistent Remaining
-stats.Refresh(force:true); // refills everything to Base
+stats["STR"].Buff(5);
+stats["STR"].Debuff(2);
+stats["STR"].ModifyEquipment(3);
+stats.AddEquipment("STR", 1);
 ```
 
-### About .STR / .Strength dot access
-C# cannot dynamically create real properties at runtime. You have three options:
-1) Use `stats["STR"]` / `stats["Strength"]` (recommended for v1).
-2) Create a small wrapper class with fields for your game’s known stats (students can copy/paste).
-3) Use `dynamic` access (works, but we avoid it by default for portability).
+## Battle command flow
 
+`U.Flow.Run(root)` is intentionally an action-menu loop: after a leaf action finishes, it returns to the same menu. For one-command-per-turn battles, let the battle manager own resolution:
 
-### Typed StatBlocks (dot access)
 ```csharp
-public sealed class PlayerStats : StatBlock
-{
-    public Stat HP  = new("Health","HP",120, persists:true, isLethal:true);
-    public Stat STR = new("Strength","STR",12);
+public enum BattleCommand { Fight, Defend }
 
-    public PlayerStats() => AutoRegisterFields();
-}
-```
-Now you can write:
-```csharp
-player.Stats.HP.Damage(10);
-player.Stats.STR += 5; // temp buff
-player.Stats.STR >> 2; // permanent base +2
-```
+var menu = new U.Flow.Menu("Battle")
+    .AddSelect("Fight", BattleCommand.Fight)
+    .AddSelect("Defend", BattleCommand.Defend);
 
+var decision = await U.Flow.Pick<BattleCommand>(menu);
+if (decision.Cancelled) return;
 
-### Resources vs buffs
-For resource stats like HP/MP, use:
-```csharp
-stats.HP.Damage(10);
-stats.HP.Heal(5);
-```
-`stats.HP -= 10` modifies TempModifiers (a debuff), not Remaining damage.
+var target = await U.Target.Select(enemies);
+if (target.Cancelled) return;
 
-
-### Threshold checks
-`Stat` calls `CheckThreshold()` automatically after changes to Remaining, TempModifiers, EquipmentModifiers, and Base.
-This means XP/Level-style stats can trigger `OnThresholdMet` without a dedicated gain method.
-
-
-### IsResource (HP/MP sugar)
-If `IsResource` is true, `+=` heals and `-=` damages (changes Remaining).
-For non-resource stats, `+=`/`-=` change TempModifiers (buff/debuff).
-
-
-Note: Because the StatBlock indexer has a setter, compound assignments work:
-```csharp
-stats["HP"] -= 10; // for IsResource stats, this damages Remaining
-stats["STR"] += 5;  // for non-resource stats, this buffs TempModifiers
+Resolve(decision.Value.Payload, target.Value);
+AdvanceTurn();
 ```
 
+The teaching sequence is:
 
-### LevelUp
-```csharp
-stats.LevelUp(); // applies Delta to Base for each stat
-stats["HP"].LevelUp();
+1. Pick a command.
+2. Pick target(s) when needed.
+3. Resolve the command.
+4. Advance the turn.
+
+See [Battle workflow](Documentation~/Battle.md) for a complete payload example.
+
+## Configuration and samples
+
+Package Manager exposes three optional samples:
+
+- **Config**: classroom-friendly configuration files for V, S, W, I, U, and typed Stats.
+- **Input Starter**: an Input Actions asset and optional bridge into `I`.
+- **UI Starter**: banners, dialogue, choices, and a reactive HUD.
+
+Most projects can begin with no setup. Import a sample when students need one obvious place to customize behavior.
+
+## Compatibility
+
+DarkMagic targets Unity `6000.3` and remains source-compatible with Unity 6.3, 6.4, and 6.5+.
+
+Version 3.11.0 is verified in the Unity 6000.5.8f1 Editor and in standalone macOS Mono and IL2CPP players.
+
+Unity 6.5 deprecated/error-gated `Object.GetInstanceID()`. DarkMagic’s internal owner registries instead use `RuntimeHelpers.GetHashCode(owner)`. These keys are only for runtime bookkeeping and must not be used as gameplay IDs or save data.
+
+## Testing
+
+The package contains EditMode and PlayMode tests. To run them from a test project:
+
+1. Reference this package with a local `file:` dependency.
+2. Add `"com.archenemy.darkmagic"` to the project manifest’s `testables` array.
+3. Close the Unity editor for that project.
+4. Run:
+
+```bash
+Scripts~/validate.sh /absolute/path/to/DarkMagicTest
 ```
-For resource stats, LevelUp refills Remaining to the new max.
 
+The validator checks compatibility APIs and release-version consistency, compiles the package, then runs EditMode and PlayMode tests. Set `UNITY_PATH` if Unity Hub’s newest installed editor should not be used.
 
-### Inspector polish (Stats)
-DarkMagic includes custom inspector drawers for Stat and StatBlock to keep stats readable in the Unity Inspector.
+## Design rules
 
+- Prefer memorable, readable APIs over maximal configurability.
+- Make the common classroom path zero-config.
+- Keep advanced escape hatches optional.
+- Avoid hidden architecture that makes student debugging harder.
+- Update docs, samples, tests, and package version whenever behavior changes.
 
-(Stats Inspector) StatBlocks show LevelUpAll, RefreshAll, and RefreshForce buttons in the Inspector.
+## License
 
-
-### Unity 6.5 compatibility
-DarkMagic avoids Unity's deprecated `Object.GetInstanceID()` API for internal owner tracking, so it remains compatible with Unity 6.3, 6.4, and 6.5+.
+DarkMagic is available under the [MIT License](LICENSE).

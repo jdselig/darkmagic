@@ -5,7 +5,7 @@ using UnityEngine;
 namespace DarkMagic
 {
     /// <summary>
-    /// One-time editor reminder to import the Config sample (and then copy Config into Assets).
+    /// One-time editor reminder to import the Config sample.
     /// This never runs in builds.
     /// </summary>
     [InitializeOnLoad]
@@ -31,8 +31,8 @@ namespace DarkMagic
             Debug.Log(
                 "<b>[DarkMagic]</b> Quick setup tip:\n" +
                 "1) Window → Package Manager → DarkMagic → Samples → Import <b>Config</b>\n" +
-                "2) In Project view, copy the imported <b>Config</b> folder into your <b>Assets</b> folder\n" +
-                "   (so you can edit UConfig / SConfig / VConfig safely)."
+                "2) Edit or move the imported config scripts under <b>Assets</b>.\n" +
+                "DarkMagic also works with zero config, so import this only when you want overrides."
             );
         }
 
@@ -45,6 +45,8 @@ namespace DarkMagic
             if (AssetDatabase.FindAssets("t:Script VConfig").Length > 0) return true;
             if (AssetDatabase.FindAssets("t:Script SConfig").Length > 0) return true;
             if (AssetDatabase.FindAssets("t:Script WConfig").Length > 0) return true;
+            if (AssetDatabase.FindAssets("t:Script IConfig").Length > 0) return true;
+            if (AssetDatabase.FindAssets("t:Script StatConfig").Length > 0) return true;
 
             return false;
         }

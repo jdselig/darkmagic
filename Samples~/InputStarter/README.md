@@ -8,14 +8,14 @@ It includes:
 - `IInputActionsBridge.cs` (optional bridge to feed actions into `I.GetButton` / `I.GetAxis`)
 
 ## Import
-Unity → Window → Package Manager → select **V** → **Samples** → Import **Input Starter**.
+Unity → Window → Package Manager → select **DarkMagic** → **Samples** → Import **Input Starter**.
 
 ## Use (fastest)
 1. Create an empty GameObject called **Input**.
 2. Add **InputStarter** to it.
 3. In any script:
    ```csharp
-   var input = FindFirstObjectByType<InputStarter>();
+   var input = FindAnyObjectByType<InputStarter>();
    Vector2 move = input.Move;
    if (input.JumpDown) Debug.Log("Jump!");
    ```

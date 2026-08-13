@@ -63,26 +63,46 @@ namespace DarkMagic
 
             internal readonly struct Entry
             {
+                private enum EntryKind
+                {
+                    Action,
+                    Submenu,
+                    Select,
+                }
+
                 public readonly Option Option;
                 public readonly Func<Awaitable> ActionFn;
                 public readonly Menu Submenu;
                 public readonly object Payload;
+                private readonly EntryKind _kind;
 
-                private Entry(Option option, Func<Awaitable> actionFn, Menu submenu, object payload)
+                private Entry(
+                    EntryKind kind,
+                    Option option,
+                    Func<Awaitable> actionFn,
+                    Menu submenu,
+                    object payload
+                )
                 {
+                    _kind = kind;
                     Option = option;
                     ActionFn = actionFn;
                     Submenu = submenu;
                     Payload = payload;
                 }
 
-                public static Entry MakeAction(Option option, Func<Awaitable> action) => new Entry(option, action, null, null);
-                public static Entry MakeSubmenu(Option option, Menu submenu) => new Entry(option, null, submenu, null);
-                public static Entry MakeSelect(Option option, object payload) => new Entry(option, null, null, payload);
+                public static Entry MakeAction(Option option, Func<Awaitable> action) =>
+                    new Entry(EntryKind.Action, option, action, null, null);
 
-                public bool IsAction => ActionFn != null;
-                public bool IsSubmenu => Submenu != null;
-                public bool IsSelect => Payload != null;
+                public static Entry MakeSubmenu(Option option, Menu submenu) =>
+                    new Entry(EntryKind.Submenu, option, null, submenu, null);
+
+                public static Entry MakeSelect(Option option, object payload) =>
+                    new Entry(EntryKind.Select, option, null, null, payload);
+
+                public bool IsAction => _kind == EntryKind.Action;
+                public bool IsSubmenu => _kind == EntryKind.Submenu;
+                public bool IsSelect => _kind == EntryKind.Select;
             }
 
             public readonly struct Decision<T>
@@ -149,7 +169,8 @@ namespace DarkMagic
 
                     if (e.IsAction)
                     {
-                        await e.ActionFn();
+                        if (e.ActionFn != null)
+                            await e.ActionFn();
                         continue;
                     }
 
@@ -220,7 +241,8 @@ namespace DarkMagic
 
                     if (e.IsAction)
                     {
-                        await e.ActionFn();
+                        if (e.ActionFn != null)
+                            await e.ActionFn();
                         continue;
                     }
 
@@ -230,6 +252,12 @@ namespace DarkMagic
                         {
                             var fullPath = new List<string>(path) { e.Option.Label };
                             return Result<Decision<T>>.Ok(new Decision<T>(e.Option.Label, fullPath, payload));
+                        }
+
+                        if (e.Payload == null && default(T) is null)
+                        {
+                            var fullPath = new List<string>(path) { e.Option.Label };
+                            return Result<Decision<T>>.Ok(new Decision<T>(e.Option.Label, fullPath, default));
                         }
 
     #if UNITY_EDITOR || DEVELOPMENT_BUILD

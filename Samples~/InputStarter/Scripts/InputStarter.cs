@@ -52,7 +52,7 @@ public class InputStarter : MonoBehaviour
 
         if (actions == null)
         {
-            Debug.LogWarning("[V/InputStarter] Could not load InputActionAsset at Resources/V/V_InputStarter. Make sure the sample was imported.");
+            Debug.LogWarning("[DarkMagic/InputStarter] Could not load InputActionAsset at Resources/V/V_InputStarter. Make sure the sample was imported.");
             enabled = false;
             return;
         }
@@ -79,7 +79,7 @@ public class InputStarter : MonoBehaviour
 #else
     private void Awake()
     {
-        Debug.LogWarning("[V/InputStarter] ENABLE_INPUT_SYSTEM is not defined. Install/enable the new Input System to use this sample.");
+        Debug.LogWarning("[DarkMagic/InputStarter] ENABLE_INPUT_SYSTEM is not defined. Install/enable the new Input System to use this sample.");
         enabled = false;
     }
 #endif

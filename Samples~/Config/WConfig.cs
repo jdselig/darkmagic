@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// WConfig: One obvious place to configure W.
-/// Import this sample via Package Manager → V → Samples → Import "WConfig".
+/// Import this sample via Package Manager → DarkMagic → Samples → Import "Config".
 /// </summary>
 public static class WConfig
 {

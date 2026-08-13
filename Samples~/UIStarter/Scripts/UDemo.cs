@@ -34,7 +34,7 @@ public class UDemo : MonoBehaviour
 
             if (cmd.Value == "Fight")
             {
-                await U.PopBanner("Choose a target (v1: UI-only choice).", placement: U.Placements.TopCenter);
+                await U.PopBanner("Choose a target.", placement: U.Placements.TopCenter);
                 var t = await U.PopChoice("Target", "Goblin A", "Goblin B", "Back");
                 if (t.Cancelled || t.Value == "Back") continue;
                 await U.PopBanner($"You attack {t.Value}!", placement: U.Placements.TopCenter);

@@ -1,0 +1,25 @@
+{
+  "name": "Archenemy.DarkMagic.Tests.EditMode",
+  "rootNamespace": "DarkMagic.Tests",
+  "references": [
+    "Archenemy.DarkMagic.Core",
+    "Archenemy.DarkMagic.Stats",
+    "Archenemy.DarkMagic.StateMachine",
+    "Archenemy.DarkMagic.U",
+    "Archenemy.DarkMagic.V"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

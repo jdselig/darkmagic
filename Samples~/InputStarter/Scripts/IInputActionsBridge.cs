@@ -19,10 +19,10 @@ public class IInputActionsBridge : MonoBehaviour
 
     private void Awake()
     {
-        if (starter == null) starter = FindFirstObjectByType<InputStarter>();
+        if (starter == null) starter = FindAnyObjectByType<InputStarter>();
         if (starter == null)
         {
-            Debug.LogWarning("[V/IInputActionsBridge] No InputStarter found. Add InputStarter to the scene or assign it.");
+            Debug.LogWarning("[DarkMagic/IInputActionsBridge] No InputStarter found. Add InputStarter to the scene or assign it.");
             enabled = false;
             return;
         }
@@ -50,7 +50,7 @@ public class IInputActionsBridge : MonoBehaviour
 #else
     private void Awake()
     {
-        Debug.LogWarning("[V/IInputActionsBridge] ENABLE_INPUT_SYSTEM is not defined. Install/enable the new Input System to use this sample.");
+        Debug.LogWarning("[DarkMagic/IInputActionsBridge] ENABLE_INPUT_SYSTEM is not defined. Install/enable the new Input System to use this sample.");
         enabled = false;
     }
 #endif

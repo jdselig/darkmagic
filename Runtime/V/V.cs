@@ -580,13 +580,6 @@ namespace DarkMagic
 
         private static UnityEngine.Object InferOwner(Delegate d) => d.Target as UnityEngine.Object;
 
-        private static bool ShouldWarn =>
-    #if UNITY_EDITOR
-            Guardrails;
-    #else
-            Guardrails && Debug.isDebugBuild;
-    #endif
-
         private static string Label(Type evtType) => evtType?.FullName ?? "(event)";
 
         private sealed class Unsub : IDisposable
@@ -618,115 +611,6 @@ namespace DarkMagic
                 if (Owner == null) return true; // global listener; never auto-removed
                 if (!Owner.TryGetTarget(out var o)) return false;
                 return o != null; // Unity destroyed objects compare == null
-            }
-        }
-
-        private struct OwnerEventKey : IEquatable<OwnerEventKey>
-        {
-            public Type EventType;
-            public int OwnerId;
-
-            public bool Equals(OwnerEventKey other) => EventType == other.EventType && OwnerId == other.OwnerId;
-            public override bool Equals(object obj) => obj is OwnerEventKey other && Equals(other);
-            public override int GetHashCode() => ((EventType != null ? EventType.GetHashCode() : 0) * 397) ^ OwnerId;
-        }
-
-        private struct FrameCounter
-        {
-            public int Frame;
-            public int AddedThisFrame;
-        }
-
-        private static void GuardrailChecks(Type evtType, UnityEngine.Object owner, Delegate originalDelegateForWarning,
-            Dictionary<Type, List<object>> subsByEvent, Dictionary<OwnerEventKey, FrameCounter> addsPerOwnerPerEvent, HashSet<Type> warnedGlobal)
-        {
-            if (!ShouldWarn) return;
-
-            string label = Label(evtType);
-
-            // Trap B: global listener (no owner)
-            if (owner == null)
-            {
-                if (warnedGlobal.Add(evtType))
-                {
-                    Debug.LogWarning(
-                        $"[V] Listener added without an owner for {label}.\n" +
-                        "This listener may live forever. In MonoBehaviours, prefer: this.On / this.Once."
-                    );
-                }
-                return;
-            }
-
-            // Trap A-ish: repeated subscriptions (often from Update)
-            int ownerId = GetOwnerKey(owner);
-            var key = new OwnerEventKey { EventType = evtType, OwnerId = ownerId };
-
-            int frame = Time.frameCount;
-            addsPerOwnerPerEvent.TryGetValue(key, out var fc);
-
-            if (fc.Frame != frame)
-            {
-                fc.Frame = frame;
-                fc.AddedThisFrame = 0;
-            }
-
-            fc.AddedThisFrame++;
-            addsPerOwnerPerEvent[key] = fc;
-
-            if (fc.AddedThisFrame == 3)
-            {
-                Debug.LogWarning(
-                    $"[V] {owner.name} subscribed to {label} multiple times in the same frame.\n" +
-                    "Did you call this.On(...) inside Update()? Subscribe once in Awake/Start/OnEnable."
-                );
-            }
-
-            if (!subsByEvent.TryGetValue(evtType, out var listObj) || listObj.Count == 0)
-                return;
-
-            bool sameOwnerExists = false;
-            bool exactMethodMatch = false;
-
-            for (int i = listObj.Count - 1; i >= 0; i--)
-            {
-                var o = listObj[i];
-                var ownerField = o.GetType().GetField("Owner");
-                var originalField = o.GetType().GetField("Original");
-
-                if (ownerField == null || originalField == null) continue;
-
-                var ownerRef = ownerField.GetValue(o) as WeakReference<UnityEngine.Object>;
-                if (ownerRef == null) continue;
-
-                if (!ownerRef.TryGetTarget(out var existingOwner) || existingOwner == null) continue;
-
-                if (GetOwnerKey(existingOwner) == ownerId)
-                {
-                    sameOwnerExists = true;
-
-                    var existingOriginal = originalField.GetValue(o) as Delegate;
-                    if (existingOriginal != null && originalDelegateForWarning != null &&
-                        existingOriginal.Method == originalDelegateForWarning.Method)
-                    {
-                        exactMethodMatch = true;
-                        break;
-                    }
-                }
-            }
-
-            if (exactMethodMatch)
-            {
-                Debug.LogWarning(
-                    $"[V] Possible duplicate subscription: {owner.name} subscribed again to {label} using the same method.\n" +
-                    "If something is firing twice, check that you're not subscribing multiple times (Awake/OnEnable/Start)."
-                );
-            }
-            else if (sameOwnerExists && fc.AddedThisFrame == 1)
-            {
-                Debug.LogWarning(
-                    $"[V] {owner.name} subscribed again to {label}.\n" +
-                    "If something is firing twice, check where subscriptions are created. Prefer subscribing once (Awake/Start/OnEnable)."
-                );
             }
         }
 

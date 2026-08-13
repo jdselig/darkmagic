@@ -5,7 +5,7 @@ using DarkMagic;
 /// VConfig: One obvious place to configure V.
 ///
 /// Suggested student workflow:
-/// - Package Manager → V → Samples → Import "VConfig"
+/// - Package Manager → DarkMagic → Samples → Import "Config"
 /// - Toggle Trace here
 /// - Add new event TYPES below (one class per event)
 /// </summary>

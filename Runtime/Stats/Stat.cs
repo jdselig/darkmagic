@@ -17,8 +17,8 @@ namespace DarkMagic
         // Core values
         public int Initial;     // starting base at creation
         public int Base;        // persistent base (max for resources)
-        public int Remaining;   // current remaining (for resources). If not used, keep at Base.
-        public int Delta = 1;       // convenience: change amount when Base changes (level-ups, etc.)
+        public int Remaining;   // current remaining (for resources). Ignored by normal stats.
+        public int Delta = 1;   // amount applied by LevelUp()
         public int Threshold = 0; // e.g. XP needed to level; 0 disables threshold logic
 
         // Modifiers
@@ -32,13 +32,12 @@ namespace DarkMagic
         public bool IsDisabled;
 
         // Events (optional, lightweight)
-        #pragma warning disable CS0067 // Events may be used by game code; library itself may not reference them directly.
         public event Action<Stat, int, int> OnBaseChanged;      // (stat, oldBase, newBase)
         public event Action<Stat> OnThresholdMet;
-        #pragma warning restore CS0067
 
         /// <summary>
-        /// Current practical value (uses Remaining for resource stats).
+        /// Current practical value. Normal stats use Base + modifiers;
+        /// resource stats use Remaining, capped at that effective max.
         /// </summary>
         public int Current => CalculateCurrent();
 
@@ -66,11 +65,13 @@ namespace DarkMagic
         }
 
         /// <summary>
-        /// Use Remaining if it is below the effective max, otherwise use effective max.
+        /// Normal stats use their effective value. Resource stats use Remaining,
+        /// capped at the effective max.
         /// </summary>
         public int CalculateCurrent()
         {
             int effectiveMax = Base + TempModifiers + EquipmentModifiers;
+            if (!IsResource) return effectiveMax;
             return Remaining < effectiveMax ? Remaining : effectiveMax;
         }
 
@@ -118,9 +119,28 @@ namespace DarkMagic
             ClampAndCheckLethal();
         }
 
-        /// <summary>
-        /// For stats like XP: call this after changes to decide if threshold is met.
-        /// </summary>
+        /// <summary>Adds a temporary bonus. Non-positive amounts are ignored.</summary>
+        public void Buff(int amount)
+        {
+            if (amount <= 0) return;
+            ModifyTemp(amount);
+        }
+
+        /// <summary>Adds a temporary penalty. Non-positive amounts are ignored.</summary>
+        public void Debuff(int amount)
+        {
+            if (amount <= 0) return;
+            ModifyTemp(-amount);
+        }
+
+        /// <summary>Changes the equipment bonus, then keeps resource values in range.</summary>
+        public void ModifyEquipment(int amount)
+        {
+            EquipmentModifiers += amount;
+            CheckThreshold();
+            ClampRemainingToMax();
+            ClampAndCheckLethal();
+        }
 
         /// <summary>
         /// Persistent base change (like Pokemon vitamins, level-ups, permanent debuffs).
@@ -129,7 +149,6 @@ namespace DarkMagic
         {
             int old = Base;
             Base += amount;
-            Delta = amount;
 
             // Clamp Remaining to the new effective max.
             int effectiveMax = Base + TempModifiers + EquipmentModifiers;
@@ -154,6 +173,11 @@ namespace DarkMagic
                 Remaining = effectiveMax;
             }
         }
+
+        /// <summary>
+        /// For stats like XP: checks whether Current has reached Threshold.
+        /// Threshold values of zero or less disable the check.
+        /// </summary>
         public void CheckThreshold()
         {
             if (Threshold <= 0) return;
