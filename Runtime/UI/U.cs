@@ -841,7 +841,7 @@ namespace DarkMagic
                 if (_defaultFontAsset != null)
                     return _defaultFontAsset;
                 // Priority: user config -> package fallback -> TMP project default
-                _defaultFontAsset = UConfig.FontAsset;
+                _defaultFontAsset = UConfig.FontAsset ?? UConfig.Font;
                 if (_defaultFontAsset != null)
                     return _defaultFontAsset;
                 _defaultFontAsset =
@@ -870,12 +870,35 @@ namespace DarkMagic
             EnsureTMPSettings();
             UConfig.ApplyUserOverrides();
             UConfig.ApplyStylePreset();
+            _defaultFontAsset = null;
+            EnsureUsableFontAsset();
             _sys = new UISystem();
             _pool = new PanelPool(_sys);
             _stack = new PanelStack();
             _display = new DisplaySystem(_sys);
             _history = new HistoryRing(UConfig.HistoryMax);
             _initialized = true;
+        }
+
+        private static void EnsureUsableFontAsset()
+        {
+            var font = DefaultFontAsset;
+            var material = font != null ? font.material : null;
+            var shader = material != null ? material.shader : null;
+            var hasErrorShader =
+                shader != null
+                && shader.name.IndexOf("InternalErrorShader", StringComparison.OrdinalIgnoreCase) >= 0;
+            var unsupportedShader =
+                shader != null && !Application.isBatchMode && !shader.isSupported;
+
+            if (font != null && material != null && shader != null && !hasErrorShader && !unsupportedShader)
+                return;
+
+            throw new InvalidOperationException(
+                "[DarkMagic/U] The selected TMP font does not have a working shader. "
+                    + "In the Unity Editor, choose Tools > DarkMagic > Setup UI and import TMP Essential Resources, "
+                    + "then try again. You can also assign a working TMP font to UConfig.FontAsset."
+            );
         }
 
         private static void EnsureTMPSettings()

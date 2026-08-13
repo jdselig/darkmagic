@@ -2,7 +2,7 @@
 
 Import this sample to see U in action.
 
-It uses DarkMagic's zero-config defaults. Import the separate **Config** sample if you want to customize U.
+It uses DarkMagic's code-first defaults. Run **Tools → DarkMagic → Setup UI** once if this project has not imported TMP Essential Resources. Import the separate **Config** sample if you want to customize U.
 
 1) Package Manager → DarkMagic → Samples → Import **UI Starter**
 2) Create an empty GameObject and add `UDemo` to it.

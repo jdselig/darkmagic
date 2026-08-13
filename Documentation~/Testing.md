@@ -23,6 +23,8 @@ Reference the checkout being tested:
 
 Keep any other dependencies your project needs. DarkMagic itself relies on Unity’s built-in UGUI/TextMeshPro assemblies.
 
+Open the test project once and run **Tools → DarkMagic → Setup UI** before batch validation. This imports Unity's official TMP Essential Resources so the font-material test can verify a real supported shader, not only generated text geometry.
+
 ## One-command validation
 
 Close that Unity project, then run:
@@ -38,7 +40,9 @@ The script:
 3. Checks README/package version consistency.
 4. Compiles the package in batch mode.
 5. Runs EditMode tests.
-6. Runs PlayMode tests.
+6. Runs PlayMode tests, including checks for missing or error-shader TMP materials and shader support when a graphics device is available.
+
+DarkMagic also validates the selected U font before player builds. If it is broken, the build stops with instructions to run **Tools → DarkMagic → Setup UI** or assign a working `UConfig.FontAsset`.
 
 Results and Unity logs are written to `TestResults~/`, which Unity and Git ignore.
 

@@ -1,6 +1,6 @@
 {
   "name": "com.archenemy.darkmagic",
-  "version": "3.11.1",
+  "version": "3.11.2",
   "displayName": "DarkMagic",
   "description": "A student-friendly Unity toolkit for events, state, Awaitables, input, utilities, animation, code-first UI, targeting, menu flow, and JRPG-style stats.",
   "unity": "6000.5",
@@ -36,7 +36,7 @@
     },
     {
       "displayName": "UI Starter",
-      "description": "Zero-config banners, dialogue, choices, and reactive HUD examples.",
+      "description": "Code-first banners, dialogue, choices, and reactive HUD examples.",
       "path": "Samples~/UIStarter"
     }
   ],

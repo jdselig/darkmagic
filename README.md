@@ -2,7 +2,7 @@
 
 DarkMagic is a student-friendly Unity helper package by John Selig. It keeps common game-dev code readable, low-ceremony, and easy to teach while leaving advanced paths available when a project grows.
 
-Current version: **3.11.1**
+Current version: **3.11.2**
 
 Unity support: **6.5+**
 
@@ -13,7 +13,7 @@ Verified with: **Unity 6000.5.8f1**
 In Unity, open **Window → Package Manager → + → Add package from Git URL** and enter:
 
 ```text
-https://github.com/jdselig/darkmagic.git#v3.11.1
+https://github.com/jdselig/darkmagic.git#v3.11.2
 ```
 
 For local package development, add this to the consuming project’s `Packages/manifest.json`:
@@ -22,7 +22,9 @@ For local package development, add this to the consuming project’s `Packages/m
 "com.archenemy.darkmagic": "file:/absolute/path/to/darkmagic"
 ```
 
-DarkMagic includes its own dynamic TMP fonts and minimal fallback settings. Students do not need to import TMP Essential Resources before using `U`, though a project can still provide its own TMP settings or set `UConfig.FontAsset`.
+DarkMagic includes its own dynamic TMP font assets and uses Unity's official TMP shaders. On first install, choose **Import Now** when DarkMagic offers to import **TMP Essential Resources**. You can run the same check any time from **Tools → DarkMagic → Setup UI**.
+
+This is a one-time Unity project setup, not a separate download. Unity adds the resources under `Assets/TextMesh Pro`. Projects that already assign a working custom `UConfig.FontAsset` can skip it.
 
 ## The map
 
@@ -251,7 +253,7 @@ Package Manager exposes three optional samples:
 - **Input Starter**: an Input Actions asset and optional bridge into `I`.
 - **UI Starter**: banners, dialogue, choices, and a reactive HUD.
 
-Most projects can begin with no setup. Import a sample when students need one obvious place to customize behavior.
+Most projects only need the one-time TMP setup above. Import a sample when students need one obvious place to customize behavior.
 
 The Config sample compiles in its own assembly, so its global event/state names and `DarkMagic` settings are checked across a real Unity assembly boundary. Its U overrides are preserved and applied in Editor, Mono, and IL2CPP builds.
 
@@ -259,7 +261,7 @@ The Config sample compiles in its own assembly, so its global event/state names 
 
 DarkMagic targets Unity `6000.5` and supports Unity 6.5 and newer.
 
-Version 3.11.1 is verified in the Unity 6000.5.8f1 Editor and in standalone macOS Mono and IL2CPP players.
+Version 3.11.2 is verified in the Unity 6000.5.8f1 Editor and in standalone macOS Mono and IL2CPP players.
 
 Unity 6.5 deprecated/error-gated `Object.GetInstanceID()`. DarkMagic’s internal owner registries instead use `RuntimeHelpers.GetHashCode(owner)`. These keys are only for runtime bookkeeping and must not be used as gameplay IDs or save data.
 
@@ -269,19 +271,20 @@ The package contains EditMode and PlayMode tests. To run them from a test projec
 
 1. Reference this package with a local `file:` dependency.
 2. Add `"com.archenemy.darkmagic"` to the project manifest’s `testables` array.
-3. Close the Unity editor for that project.
-4. Run:
+3. Open the project once and run **Tools → DarkMagic → Setup UI**.
+4. Close the Unity editor for that project.
+5. Run:
 
 ```bash
 Scripts~/validate.sh /absolute/path/to/DarkMagicTest
 ```
 
-The validator checks compatibility APIs and release-version consistency, compiles the package, then runs EditMode and PlayMode tests. Set `UNITY_PATH` if Unity Hub’s newest installed editor should not be used.
+The validator checks compatibility APIs and release-version consistency, compiles the package, then runs EditMode and PlayMode tests. Its font smoke test rejects missing or error-shader materials and checks shader support when a graphics device is available. Player builds also stop early with setup instructions if the selected U font is broken. Set `UNITY_PATH` if Unity Hub’s newest installed editor should not be used.
 
 ## Design rules
 
 - Prefer memorable, readable APIs over maximal configurability.
-- Make the common classroom path zero-config.
+- Make the common classroom path zero code configuration with clear project setup.
 - Keep advanced escape hatches optional.
 - Avoid hidden architecture that makes student debugging harder.
 - Update docs, samples, tests, and package version whenever behavior changes.
